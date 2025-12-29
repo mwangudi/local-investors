@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use Filament\Schemas\Schema;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Toggle;
 use Filament\Tables\Columns\TextColumn;
@@ -90,6 +91,16 @@ class MemberResource extends Resource
                     Toggle::make('is_active')
                         ->label('Active Member')
                         ->default(true)
+                        ->columnSpan(['md' => 4]),
+
+                    Select::make('notification_preference')
+                        ->options([
+                            'email' => 'Email',
+                            'sms' => 'SMS',
+                            'both' => 'Email & SMS',
+                        ])
+                        ->default('email')
+                        ->required()
                         ->columnSpan(['md' => 4]),
 
                 ])

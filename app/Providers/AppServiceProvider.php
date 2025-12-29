@@ -21,6 +21,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \App\Models\Loan::observe(\App\Observers\LoanObserver::class);
+
         // Enable live validation for ALL Filament form components
         Component::configureUsing(function (Component $component) {
             if (method_exists($component, 'live')) {
@@ -33,7 +35,8 @@ class AppServiceProvider extends ServiceProvider
             if (method_exists($component, 'validateOnly')) {
                 try {
                     $component->validateOnly($name);
-                } catch (\Throwable $e) {}
+                } catch (\Throwable $e) {
+                }
             }
         });
     }

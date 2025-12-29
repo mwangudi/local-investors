@@ -5,12 +5,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use Illuminate\Notifications\Notifiable;
+
 class Member extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Notifiable;
 
     protected $fillable = [
-        'first_name','last_name','email','phone','join_date','is_active',
+        'first_name',
+        'last_name',
+        'email',
+        'phone',
+        'join_date',
+        'is_active',
+        'notification_preference',
     ];
 
     protected $casts = [
@@ -26,6 +34,11 @@ class Member extends Model
     public function loans()
     {
         return $this->hasMany(Loan::class);
+    }
+
+    public function routeNotificationForSms()
+    {
+        return $this->phone;
     }
 
     public function getFullNameAttribute()
