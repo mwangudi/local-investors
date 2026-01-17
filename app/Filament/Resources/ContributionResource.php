@@ -57,8 +57,8 @@ class ContributionResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->with(['member']);
+        // All users can view all contributions
+        return parent::getEloquentQuery()->with(['member']);
     }
 
     public static function form(Form $form): Form
@@ -195,6 +195,8 @@ class ContributionResource extends Resource
         return $self->applyIconizedTableActions(
             $table
                 ->striped()
+                ->checkIfRecordIsSelectableUsing(fn() => auth()->user()?->hasRole('admin'))
+                ->recordUrl(fn() => auth()->user()?->hasRole('admin') ? null : false)
                 ->columns([
                     TextColumn::make('member.full_name')
                         ->label('Member')
@@ -208,22 +210,18 @@ class ContributionResource extends Resource
 
                     TextColumn::make('shares')
                         ->money('kes')
-                        ->summarize(Sum::make()->money('kes'))
                         ->label('Shares'),
 
                     TextColumn::make('welfare')
                         ->money('kes')
-                        ->summarize(Sum::make()->money('kes'))
                         ->label('Welfare'),
 
                     TextColumn::make('merry_go_round')
                         ->money('kes')
-                        ->summarize(Sum::make()->money('kes'))
                         ->label('MGR'),
 
                     TextColumn::make('penalty')
                         ->money('kes')
-                        ->summarize(Sum::make()->money('kes'))
                         ->label('Penalty'),
 
                     BadgeColumn::make('penalty_type')
@@ -283,12 +281,14 @@ class ContributionResource extends Resource
                 ])
                 ->actions([
                     ViewAction::make(),
-                    EditAction::make(),
+                    EditAction::make()
+                        ->hidden(fn() => !auth()->user()?->hasRole('admin')),
                 ])
                 ->bulkActions([
                     BulkActionGroup::make([
-                        DeleteBulkAction::make(),
-                    ])
+                        DeleteBulkAction::make()
+                            ->hidden(fn() => !auth()->user()?->hasRole('admin')),
+                    ]),
                 ])
         );
     }

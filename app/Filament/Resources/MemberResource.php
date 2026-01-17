@@ -42,7 +42,7 @@ class MemberResource extends Resource
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->hasRole('admin');
+        return true; // All authenticated users can view members
     }
 
     public static function canCreate(): bool
@@ -137,6 +137,8 @@ class MemberResource extends Resource
             $table
                 ->defaultSort('id', 'desc')
                 ->striped()
+                ->checkIfRecordIsSelectableUsing(fn() => auth()->user()?->hasRole('admin'))
+                ->recordUrl(fn() => auth()->user()?->hasRole('admin') ? null : false)
                 ->columns([
 
                     TextColumn::make('first_name')
@@ -191,14 +193,18 @@ class MemberResource extends Resource
 
                 ->actions([
                     ViewAction::make(),
-                    EditAction::make(),
+                    EditAction::make()
+                        ->hidden(fn() => !auth()->user()?->hasRole('admin')),
                 ])
 
                 ->bulkActions([
                     BulkActionGroup::make([
-                        DeleteBulkAction::make(),
-                        ForceDeleteBulkAction::make(),
-                        RestoreBulkAction::make(),
+                        DeleteBulkAction::make()
+                            ->hidden(fn() => !auth()->user()?->hasRole('admin')),
+                        ForceDeleteBulkAction::make()
+                            ->hidden(fn() => !auth()->user()?->hasRole('admin')),
+                        RestoreBulkAction::make()
+                            ->hidden(fn() => !auth()->user()?->hasRole('admin')),
                     ]),
                 ])
 

@@ -14,6 +14,9 @@ use Filament\Tables\Actions\CreateAction;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Table;
 use Filament\Forms\Form;
+use Illuminate\Support\Facades\DB;
+use App\Models\Loan;
+use Filament\Notifications\Notification;
 
 class LoanRepaymentRelationManager extends RelationManager
 {
@@ -192,8 +195,248 @@ class LoanRepaymentRelationManager extends RelationManager
              * Hide Create button if loan is fully paid
              */
             ->headerActions([
+                \Filament\Tables\Actions\Action::make('top_up')
+                    ->label('Top Up (Add Cash)')
+                    ->icon('heroicon-o-plus-circle')
+                    ->color('success')
+                    ->modalWidth('md')
+                    ->hidden(fn(RelationManager $livewire) => !auth()->user()?->hasRole('admin') || $livewire->ownerRecord->repaid || $livewire->ownerRecord->status !== Loan::STATUS_DISBURSED)
+                    ->form([
+                        \Filament\Forms\Components\Section::make('Loan Status')
+                            ->schema([
+                                TextInput::make('current_balance')
+                                    ->label('Current Balance')
+                                    ->prefix('KES')
+                                    ->numeric()
+                                    ->default(fn(RelationManager $livewire) => $livewire->ownerRecord->balance)
+                                    ->disabled()
+                                    ->dehydrated(false),
+                            ]),
+
+                        TextInput::make('amount')
+                            ->label('Top Up Amount (Cash/Mpesa to Member)')
+                            ->helperText('How much extra cash is the member borrowing?')
+                            ->required()
+                            ->numeric()
+                            ->default(0)
+                            ->minValue(1)
+                            ->prefix('KES')
+                            ->live()
+                            ->afterStateUpdated(function ($state, $set, RelationManager $livewire) {
+                                $balance = $livewire->ownerRecord->balance;
+                                $topUp = (float) $state;
+                                $newPrincipal = $balance + $topUp;
+                                $set('new_principal_preview', number_format($newPrincipal, 2));
+                                $set('new_principal', $newPrincipal);
+                            }),
+
+                        Select::make('method')
+                            ->label('Disbursement Method (For Top Up)')
+                            ->options([
+                                'cash' => 'Cash',
+                                'mpesa' => 'M-Pesa',
+                                'bank' => 'Bank Transfer',
+                            ])
+                            ->default('mpesa')
+                            ->required(),
+
+                        TextInput::make('new_principal_preview')
+                            ->label('New Loan Principal')
+                            ->helperText('Current Balance + Top Up Amount')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->prefix('KES')
+                            ->default(fn(RelationManager $livewire) => $livewire->ownerRecord->balance),
+
+                        \Filament\Forms\Components\Hidden::make('new_principal')
+                            ->default(fn(RelationManager $livewire) => $livewire->ownerRecord->balance),
+
+                        TextInput::make('new_term')
+                            ->label('New Loan Term (Months)')
+                            ->default(2)
+                            ->numeric()
+                            ->required()
+                            ->minValue(1),
+                    ])
+                    ->action(function (array $data, RelationManager $livewire) {
+                        $oldLoan = $livewire->ownerRecord;
+
+                        if ($oldLoan->repaid) {
+                            Notification::make()->title('Loan is already repaid')->danger()->send();
+                            return;
+                        }
+
+                        $topUpAmount = (float) $data['amount'];
+                        $totalBalance = $oldLoan->balance;
+
+                        // New Principal = Old Balance + Top Up
+                        $newPrincipal = $totalBalance + $topUpAmount;
+
+                        DB::transaction(function () use ($data, $livewire, $oldLoan, $topUpAmount, $newPrincipal, $totalBalance) {
+
+                            // 1. Close Old Loan via Virtual Repayment (Refinance)
+                            // We pay off the entire balance to close it.
+                            $livewire->getRelationship()->create([
+                                'amount' => $totalBalance,
+                                'paid_at' => now(),
+                                'method' => 'refinance',
+                                'notes' => 'Cleared via Loan Top Up (Refinance)',
+                                'loan_id' => $oldLoan->id,
+                            ]);
+
+                            // 2. Update Old Loan State
+                            $livewire->updateLoanState($oldLoan);
+
+                            // 3. Create New Loan
+                            $newLoan = Loan::create([
+                                'member_id' => $oldLoan->member_id,
+                                'amount' => $newPrincipal,
+                                'interest_percent' => $oldLoan->interest_percent,
+                                'term_months' => $data['new_term'],
+                                'disbursed_at' => now(),
+                                'due_at' => now()->addMonths((int) $data['new_term']),
+                                'status' => Loan::STATUS_DISBURSED,
+                            ]);
+                        });
+
+                        Notification::make()
+                            ->title('Loan Topped Up Successfully')
+                            ->body("Disburse KES " . number_format($topUpAmount) . " to member. New Loan: KES " . number_format($newPrincipal))
+                            ->success()
+                            ->persistent()
+                            ->send();
+                    }),
+
+                \Filament\Tables\Actions\Action::make('rollover')
+                    ->label('Rollover (Refinance)')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('warning')
+                    ->modalWidth('md')
+                    ->hidden(fn(RelationManager $livewire) => !auth()->user()?->hasRole('admin') || $livewire->ownerRecord->repaid || $livewire->ownerRecord->status !== Loan::STATUS_DISBURSED)
+                    ->form([
+                        \Filament\Forms\Components\Section::make('Loan Status')
+                            ->schema([
+                                TextInput::make('current_balance')
+                                    ->label('Total Balance Due')
+                                    ->prefix('KES')
+                                    ->numeric()
+                                    ->default(fn(RelationManager $livewire) => $livewire->ownerRecord->balance)
+                                    ->disabled()
+                                    ->dehydrated(false),
+                            ]),
+
+                        TextInput::make('amount')
+                            ->label('Payment Amount (Cash/Mpesa)')
+                            ->helperText('Enter the amount being paid now. The remaining balance will be the new loan principal.')
+                            ->required()
+                            ->numeric()
+                            // Default to interest only, but allow editing
+                            ->default(fn(RelationManager $livewire) => $livewire->ownerRecord->balance - $livewire->ownerRecord->amount)
+                            ->prefix('KES')
+                            ->live()
+                            ->afterStateUpdated(function ($state, $set, RelationManager $livewire) {
+                                $balance = $livewire->ownerRecord->balance;
+                                $payment = (float) $state;
+                                $newPrincipal = max(0, $balance - $payment);
+                                $set('new_principal_preview', number_format($newPrincipal, 2));
+                                $set('new_principal', $newPrincipal);
+                            }),
+
+                        Select::make('method')
+                            ->label('Payment Method')
+                            ->options([
+                                'cash' => 'Cash',
+                                'mpesa' => 'M-Pesa',
+                                'bank' => 'Bank Transfer',
+                            ])
+                            ->default('mpesa')
+                            ->required(),
+
+                        TextInput::make('new_principal_preview')
+                            ->label('New Loan Principal')
+                            ->disabled()
+                            ->dehydrated(false)
+                            ->prefix('KES')
+                            ->default(fn(RelationManager $livewire) => $livewire->ownerRecord->amount), // Default assuming interest only paid
+
+                        \Filament\Forms\Components\Hidden::make('new_principal')
+                            ->default(fn(RelationManager $livewire) => $livewire->ownerRecord->amount),
+
+                        TextInput::make('new_term')
+                            ->label('New Loan Term (Months)')
+                            ->default(2)
+                            ->numeric()
+                            ->required()
+                            ->minValue(1),
+                    ])
+                    ->action(function (array $data, RelationManager $livewire) {
+                        $oldLoan = $livewire->ownerRecord;
+
+                        if ($oldLoan->repaid) {
+                            Notification::make()->title('Loan is already repaid')->danger()->send();
+                            return;
+                        }
+
+                        $paymentAmount = (float) $data['amount'];
+                        $totalBalance = $oldLoan->balance;
+
+                        // Calculate rollover amount (New Principal)
+                        // If user pays X, New Principal = Total Due - X
+                        // This effectively capitalizes the unpaid interest into the new principal.
+                        $newPrincipal = $totalBalance - $paymentAmount;
+
+                        if ($newPrincipal <= 0) {
+                            Notification::make()->title('Payment covers entire loan. Use standard repayment instead.')->warning()->send();
+                            return;
+                        }
+
+                        DB::transaction(function () use ($data, $livewire, $oldLoan, $paymentAmount, $newPrincipal) {
+                            // 1. Record Cash Repayment
+                            if ($paymentAmount > 0) {
+                                $livewire->getRelationship()->create([
+                                    'amount' => $paymentAmount,
+                                    'paid_at' => now(),
+                                    'method' => $data['method'],
+                                    'notes' => 'Rollover Partial Payment',
+                                    'loan_id' => $oldLoan->id,
+                                ]);
+                            }
+
+                            // 2. Record Virtual Rollover Repayment to clear the OLD loan
+                            // The virtual amount must equal the REMAINING balance to act as the "transfer"
+                            // Remaining Balance = Total Balance - Cash Payment = New Principal
+                            $livewire->getRelationship()->create([
+                                'amount' => $newPrincipal,
+                                'paid_at' => now(),
+                                'method' => 'rollover',
+                                'notes' => 'Rollover Balance Transfer',
+                                'loan_id' => $oldLoan->id,
+                            ]);
+
+                            // 3. Update Old Loan State (Triggers Income Logic & Repaid Mark)
+                            $livewire->updateLoanState($oldLoan);
+
+                            // 4. Create New Loan
+                            Loan::create([
+                                'member_id' => $oldLoan->member_id,
+                                'amount' => $newPrincipal,
+                                'interest_percent' => $oldLoan->interest_percent,
+                                'term_months' => $data['new_term'],
+                                'disbursed_at' => now(),
+                                'due_at' => now()->addMonths((int) $data['new_term']),
+                                'status' => Loan::STATUS_DISBURSED,
+                            ]);
+                        });
+
+                        Notification::make()
+                            ->title('Loan Refinanced Successfully')
+                            ->body("Paid KES " . number_format($paymentAmount) . ". New Loan: KES " . number_format($newPrincipal))
+                            ->success()
+                            ->send();
+                    }),
+
                 CreateAction::make()
-                    ->hidden(fn(RelationManager $livewire) => $livewire->ownerRecord->repaid)
+                    ->hidden(fn(RelationManager $livewire) => !auth()->user()?->hasRole('admin') || $livewire->ownerRecord->repaid)
 
                     // Apply foreign key & create the record
                     ->using(function (array $data, RelationManager $livewire) {
@@ -218,13 +461,13 @@ class LoanRepaymentRelationManager extends RelationManager
              */
             ->actions([
                 EditAction::make()
-                    ->hidden(fn() => $this->ownerRecord->repaid)
+                    ->hidden(fn() => !auth()->user()?->hasRole('admin') || $this->ownerRecord->repaid)
                     ->after(function ($record) {
                         $this->updateLoanState($record->loan);
                     }),
 
                 DeleteAction::make()
-                    ->hidden(fn() => $this->ownerRecord->repaid)
+                    ->hidden(fn() => !auth()->user()?->hasRole('admin') || $this->ownerRecord->repaid)
                     ->after(function ($record) {
                         $this->updateLoanState($record->loan);
                     }),

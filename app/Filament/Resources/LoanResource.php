@@ -44,8 +44,8 @@ class LoanResource extends Resource
     protected static ?int $navigationSort = 3;
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
-            ->with(['member']);
+        // All users can view all loans
+        return parent::getEloquentQuery()->with(['member']);
     }
 
     public static function canCreate(): bool
@@ -91,19 +91,30 @@ class LoanResource extends Resource
                                 return true;
                             }
 
-                            // Case 2: Member logged in -> locked to self
+                            // Case 2: Admin -> always enabled (unless editing an existing loan with payments, maybe? but let's stick to request)
+                            if (auth()->user()->hasRole('admin')) {
+                                return false; // Admin can choose
+                            }
+
+                            // Case 3: Regular Member logged in -> locked to self
                             if (auth()->user()->member_id) {
                                 return true;
                             }
 
-                            // Case 3: loan exists AND is ongoing → disable
+                            // Case 4: loan exists AND is ongoing → disable (already handled by logic above effectively, but good for safety)
                             if ($record && !$record->repaid) {
                                 return true;
                             }
 
                             return false;
                         })
-                        ->dehydrated(),
+                        ->dehydrated()
+                        ->live()
+                        ->afterStateUpdated(function ($state, $set) {
+                            if ((int) $state === (int) auth()->user()->member_id) {
+                                $set('status', \App\Models\Loan::STATUS_APPLIED);
+                            }
+                        }),
 
                     TextInput::make('amount')
                         ->label('Loan Amount')
@@ -164,22 +175,34 @@ class LoanResource extends Resource
                     DatePicker::make('disbursed_at')
                         ->label('Disbursed On')
                         ->live()
-                        ->afterStateUpdated(function ($state, $set) {
+                        ->afterStateUpdated(function ($state, $set, $get) {
                             if ($state) {
-                                $dueDate = Carbon::parse($state)->addMonths(2);
+                                $term = (int) $get('term_months') ?: 1;
+                                $dueDate = Carbon::parse($state)->addMonths($term);
                                 $set('due_at', $dueDate->format('Y-m-d'));
                             }
                         })
-                        ->visible(fn($record) => $record && in_array($record->status, [Loan::STATUS_DISBURSED, Loan::STATUS_REPAID]))
-                        ->disabled(fn($record) => $record && $record->status !== Loan::STATUS_APPLIED),
+                        ->visible(fn($get) => in_array($get('status'), [Loan::STATUS_DISBURSED, Loan::STATUS_REPAID]))
+                        ->required(fn($get) => in_array($get('status'), [Loan::STATUS_DISBURSED, Loan::STATUS_REPAID])),
 
                     DatePicker::make('due_at')
                         ->label('Due Date')
                         ->readOnly()
-                        ->visible(fn($record) => $record && in_array($record->status, [Loan::STATUS_DISBURSED, Loan::STATUS_REPAID])),
+                        ->visible(fn($get) => in_array($get('status'), [Loan::STATUS_DISBURSED, Loan::STATUS_REPAID])),
 
-                    \Filament\Forms\Components\Hidden::make('status')
-                        ->default(Loan::STATUS_APPLIED),
+                    Select::make('status')
+                        ->label('Status')
+                        ->options([
+                            Loan::STATUS_APPLIED => 'Applied',
+                            Loan::STATUS_APPROVED => 'Approved',
+                            Loan::STATUS_DISBURSED => 'Active (Disbursed)',
+                            Loan::STATUS_REPAID => 'Repaid',
+                        ])
+                        ->default(Loan::STATUS_APPLIED)
+                        ->disabled(fn($get) => !auth()->user()->hasRole('admin') || (int) $get('member_id') === (int) auth()->user()->member_id)
+                        ->dehydrated()
+                        ->live()
+                        ->required(),
                 ])
                 ->columns(2),
 
@@ -222,6 +245,8 @@ class LoanResource extends Resource
             $table
                 ->defaultSort('id', 'desc')
                 ->striped()
+                ->checkIfRecordIsSelectableUsing(fn() => auth()->user()?->hasRole('admin'))
+                ->recordUrl(fn() => auth()->user()?->hasRole('admin') ? null : false)
                 ->columns([
 
                     TextColumn::make('member.full_name')
@@ -301,9 +326,10 @@ class LoanResource extends Resource
 
                 ])
                 ->actions([
-                    ViewAction::make(),
+                    ViewAction::make()
+                        ->hidden(fn() => !auth()->user()?->hasRole('admin')),
                     EditAction::make()
-                        ->hidden(fn($record) => $record->status === Loan::STATUS_REPAID),
+                        ->hidden(fn($record) => !auth()->user()?->hasRole('admin') || $record->status === Loan::STATUS_REPAID),
 
                     \Filament\Tables\Actions\Action::make('approve')
                         ->label('Approve')
@@ -360,9 +386,12 @@ class LoanResource extends Resource
                 ])
                 ->bulkActions([
                     BulkActionGroup::make([
-                        DeleteBulkAction::make(),
-                        ForceDeleteBulkAction::make(),
-                        RestoreBulkAction::make(),
+                        DeleteBulkAction::make()
+                            ->hidden(fn() => !auth()->user()?->hasRole('admin')),
+                        ForceDeleteBulkAction::make()
+                            ->hidden(fn() => !auth()->user()?->hasRole('admin')),
+                        RestoreBulkAction::make()
+                            ->hidden(fn() => !auth()->user()?->hasRole('admin')),
                     ]),
                 ])
         );

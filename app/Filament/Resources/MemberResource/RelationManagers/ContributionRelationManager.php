@@ -95,14 +95,17 @@ class ContributionRelationManager extends RelationManager
                     CreateAction::make()
                         ->label('Add Contribution')
                         ->icon('heroicon-o-plus')
+                        ->hidden(fn() => !auth()->user()?->hasRole('admin'))
                         ->using(function (array $data, RelationManager $livewire) {
                             $data['member_id'] = $livewire->ownerRecord->id;
                             return $livewire->getRelationship()->create($data);
                         }),
                 ])
                 ->actions([
-                    EditAction::make(),
-                    DeleteAction::make(),
+                    EditAction::make()
+                        ->hidden(fn() => !auth()->user()?->hasRole('admin')),
+                    DeleteAction::make()
+                        ->hidden(fn() => !auth()->user()?->hasRole('admin')),
                 ])
         );
     }
