@@ -8,7 +8,7 @@
     <title>{{ config('app.name', 'Duralux') }} || Login</title>
     
     <!-- Favicon -->
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/favicon.ico') }}">
+    <link rel="shortcut icon" type="image/png" href="{{ asset('assets/images/favicon.png') }}">
     
     <!-- Core Stylesheets -->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/bootstrap.min.css') }}">

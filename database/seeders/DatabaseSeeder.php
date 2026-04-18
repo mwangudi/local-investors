@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             ChamaSettingsSeeder::class,
             MembersAndContributionsSeeder::class,
+            LoanSeeder::class,
             LandProjectSeeder::class,
         ]);
     }

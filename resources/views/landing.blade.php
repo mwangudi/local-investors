@@ -7,7 +7,7 @@
     <meta name="description" content="Local Investors SACCO — savings, affordable loans and transparent member finance." />
     <title>{{ config('app.name', 'Local Investors') }} — SACCO Savings & Loans</title>
 
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/favicon.ico') }}" />
+    <link rel="shortcut icon" type="image/png" href="{{ asset('assets/images/favicon.png') }}" />
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/bootstrap.min.css') }}" />
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/fontawesome.min.css') }}" />
 
@@ -95,7 +95,7 @@
 <nav class="li-nav">
     <div class="container d-flex align-items-center">
         <a href="#top" class="li-brand">
-            <span class="dot">LI</span>
+            <img src="{{ asset('images/logo-mini.png') }}" alt="Logo" style="height: 34px; border-radius: 8px;">
             <span>{{ config('app.name', 'Local Investors') }}</span>
         </a>
         <div class="ms-auto d-none d-md-flex align-items-center gap-3">
@@ -134,24 +134,29 @@
                         <strong>Member Snapshot</strong>
                         <span class="badge bg-success-subtle text-success">Live</span>
                     </div>
+                    @php
+                        $memberCount = \App\Models\Member::where('is_active', true)->count();
+                        $totalSavings = \App\Models\Contribution::sum('shares') + \App\Models\Contribution::sum('welfare') + \App\Models\Contribution::sum('merry_go_round');
+                        $activeLoans = \App\Models\Loan::where('status', 'disbursed')->count();
+                    @endphp
                     <div class="row text-center py-3">
                         <div class="col-4 stat">
-                            <h3>0</h3>
+                            <h3>{{ $memberCount }}</h3>
                             <small>Members</small>
                         </div>
                         <div class="col-4 stat">
-                            <h3>KES 0</h3>
+                            <h3>KES {{ number_format($totalSavings, 0) }}</h3>
                             <small>Total Savings</small>
                         </div>
                         <div class="col-4 stat">
-                            <h3>0</h3>
+                            <h3>{{ $activeLoans }}</h3>
                             <small>Active Loans</small>
                         </div>
                     </div>
                     <hr />
                     <small class="text-muted d-block">
-                        <i class="fas fa-info-circle me-1 text-warning"></i>
-                        Figures update once the admin seeds current SACCO data.
+                        <i class="fas fa-circle text-success me-1" style="font-size: .5rem; vertical-align: middle;"></i>
+                        Live figures — updated in real time from the SACCO ledger.
                     </small>
                 </div>
             </div>

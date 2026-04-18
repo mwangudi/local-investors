@@ -198,6 +198,69 @@
         </div>
     </div>
 
+    <!-- Member Snapshot -->
+    <div class="row mb-2">
+        <div class="col-12">
+            <div class="card stretch stretch-full">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Member Snapshot</h5>
+                    <a href="{{ route('members.index') }}" class="btn btn-sm btn-light-primary">View All Members</a>
+                </div>
+                <div class="card-body custom-card-action p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Member</th>
+                                    <th class="text-end">Total Contributions</th>
+                                    <th class="text-end">Total Shares</th>
+                                    <th class="text-center">Active Loans</th>
+                                    <th class="text-end">Loan Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($memberSnapshot as $index => $member)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td class="fw-semibold">{{ $member['name'] }}</td>
+                                        <td class="text-end">KES {{ number_format($member['total_contributions'], 2) }}</td>
+                                        <td class="text-end">KES {{ number_format($member['total_shares'], 2) }}</td>
+                                        <td class="text-center">
+                                            @if($member['active_loans'] > 0)
+                                                <span class="badge bg-soft-warning text-warning">{{ $member['active_loans'] }}</span>
+                                            @else
+                                                <span class="badge bg-soft-success text-success">0</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end fw-bold {{ $member['loan_balance'] > 0 ? 'text-danger' : 'text-success' }}">
+                                            KES {{ number_format($member['loan_balance'], 2) }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">No active members</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                            @if(count($memberSnapshot) > 0)
+                            <tfoot class="table-light">
+                                <tr class="fw-bold">
+                                    <td colspan="2">Totals</td>
+                                    <td class="text-end">KES {{ number_format(collect($memberSnapshot)->sum('total_contributions'), 2) }}</td>
+                                    <td class="text-end">KES {{ number_format(collect($memberSnapshot)->sum('total_shares'), 2) }}</td>
+                                    <td class="text-center">{{ collect($memberSnapshot)->sum('active_loans') }}</td>
+                                    <td class="text-end text-danger">KES {{ number_format(collect($memberSnapshot)->sum('loan_balance'), 2) }}</td>
+                                </tr>
+                            </tfoot>
+                            @endif
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Recent Activities -->    <div class="row">
         <!-- Recent Contributions -->
         <div class="col-xxl-6">

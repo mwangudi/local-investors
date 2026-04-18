@@ -34,7 +34,7 @@
             <div class="card stretch stretch-full">
                 <div class="card-body p-0">
                     <!-- Search and Per Page -->
-                    <div class="p-3 d-flex justify-content-between align-items-center border-bottom">
+                    <div class="p-3 d-flex justify-content-between align-items-center border-bottom flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-2">
                             <span>Show</span>
                             <select class="form-select form-select-sm" style="width: auto;" wire:model.live="perPage">
@@ -44,6 +44,31 @@
                                 <option value="100">100</option>
                             </select>
                             <span>entries</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <select class="form-select form-select-sm" style="width: auto;" wire:model.live="filterMonth">
+                                <option value="">All Months</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4">April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <select class="form-select form-select-sm" style="width: auto;" wire:model.live="filterMethod">
+                                <option value="">All Methods</option>
+                                <option value="mpesa">M-Pesa</option>
+                                <option value="zimele">Zimele</option>
+                                <option value="merry_go_round">Merry-Go-Round</option>
+                            </select>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span>Search:</span>
@@ -67,6 +92,7 @@
                                     <th class="text-end">Shares</th>
                                     <th class="text-end">Welfare</th>
                                     <th class="text-end">Total</th>
+                                    <th>Method</th>
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
@@ -94,6 +120,17 @@
                                             {{ number_format($contribution->shares + $contribution->welfare + $contribution->merry_go_round + $contribution->penalty, 2) }}
                                         </td>
                                         <td>
+                                            @php
+                                                $methodBadge = match($contribution->payment_method) {
+                                                    'mpesa' => ['success', 'M-Pesa'],
+                                                    'zimele' => ['primary', 'Zimele'],
+                                                    'merry_go_round' => ['warning', 'Merry-Go-Round'],
+                                                    default => ['secondary', ucfirst($contribution->payment_method ?? 'N/A')],
+                                                };
+                                            @endphp
+                                            <span class="badge bg-soft-{{ $methodBadge[0] }} text-{{ $methodBadge[0] }}">{{ $methodBadge[1] }}</span>
+                                        </td>
+                                        <td>
                                             <div class="hstack gap-2 justify-content-end">
                                                 <a href="{{ route('contributions.edit', $contribution) }}" class="avatar-text avatar-md" title="Edit">
                                                     <i class="feather feather-edit-3"></i>
@@ -108,13 +145,22 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">
+                                        <td colspan="7" class="text-center text-muted py-4">
                                             <i class="feather-briefcase fs-1 mb-3 d-block"></i>
                                             No contributions found
                                         </td>
                                     </tr>
                                 @endforelse
                             </tbody>
+                            <tfoot class="table-light">
+                                <tr class="fw-bold">
+                                    <td colspan="2">Filtered Totals</td>
+                                    <td class="text-end">KES {{ number_format($totalShares, 2) }}</td>
+                                    <td class="text-end">KES {{ number_format($totalWelfare, 2) }}</td>
+                                    <td class="text-end">KES {{ number_format($grandTotal, 2) }}</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                     

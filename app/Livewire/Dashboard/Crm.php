@@ -35,6 +35,7 @@ class Crm extends Component
 
     public $recentContributions;
     public $recentLoans;
+    public $memberSnapshot;
 
     public function mount()
     {
@@ -90,6 +91,37 @@ class Crm extends Component
         // Recent activity
         $this->recentContributions = Contribution::with('member')->latest('paid_at')->take(5)->get();
         $this->recentLoans = Loan::with('member')->latest()->take(5)->get();
+
+        // Member Snapshot — per-member summary
+        $this->memberSnapshot = Member::where('is_active', true)
+            ->with(['contributions', 'loans.repayments'])
+            ->get()
+            ->map(function ($member) {
+                $totalContributions = $member->contributions->sum('shares')
+                    + $member->contributions->sum('welfare')
+                    + $member->contributions->sum('merry_go_round');
+                $totalShares = $member->contributions->sum('shares');
+
+                $activeLoans = $member->loans->where('status', 'disbursed');
+                $activeLoansCount = $activeLoans->count();
+                $loanBalance = $activeLoans->sum(function ($loan) {
+                    $principal = $loan->amount;
+                    $interest = ($loan->interest_percent / 100) * $principal;
+                    $totalDue = $principal + $interest;
+                    $repaid = $loan->repayments->sum('amount');
+                    return max(0, $totalDue - $repaid);
+                });
+
+                return [
+                    'name'               => $member->full_name,
+                    'total_contributions' => $totalContributions,
+                    'total_shares'        => $totalShares,
+                    'active_loans'       => $activeLoansCount,
+                    'loan_balance'       => $loanBalance,
+                ];
+            })
+            ->sortByDesc('total_contributions')
+            ->values();
     }
 
     public function render()

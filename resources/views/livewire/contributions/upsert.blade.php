@@ -49,11 +49,25 @@
                             </div>
 
                             <!-- Date -->
-                            <div class="col-md-6">
+                            <div class="col-md-3">
                                 <label for="paid_at" class="form-label">Date <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control @error('paid_at') is-invalid @enderror" 
                                        id="paid_at" wire:model="paid_at">
                                 @error('paid_at')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Payment Method -->
+                            <div class="col-md-3">
+                                <label for="payment_method" class="form-label">Payment Method <span class="text-danger">*</span></label>
+                                <select class="form-select @error('payment_method') is-invalid @enderror" 
+                                        id="payment_method" wire:model="payment_method">
+                                    <option value="mpesa">M-Pesa (to Treasurer)</option>
+                                    <option value="zimele">Zimele (Direct Deposit)</option>
+                                    <option value="merry_go_round">Merry-Go-Round</option>
+                                </select>
+                                @error('payment_method')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>

@@ -22,6 +22,7 @@ class Upsert extends Component
     public $penalty = '';
     public $penalty_type = '';
     public $paid_at;
+    public $payment_method = 'mpesa';
     public $notes = '';
 
     // Data
@@ -37,6 +38,7 @@ class Upsert extends Component
             'merry_go_round' => 'required|numeric|min:0',
             'penalty' => 'required|numeric|min:0',
             'penalty_type' => 'nullable|string|max:255',
+            'payment_method' => 'required|in:mpesa,zimele,merry_go_round',
             'notes' => 'nullable|string',
         ];
     }
@@ -54,6 +56,7 @@ class Upsert extends Component
             $this->merry_go_round = $contribution->merry_go_round;
             $this->penalty = $contribution->penalty;
             $this->penalty_type = $contribution->penalty_type ?? '';
+            $this->payment_method = $contribution->payment_method ?? 'mpesa';
             $this->notes = $contribution->notes ?? '';
         } else {
             $this->paid_at = date('Y-m-d');

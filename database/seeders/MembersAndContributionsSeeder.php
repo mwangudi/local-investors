@@ -52,7 +52,7 @@ class MembersAndContributionsSeeder extends Seeder
                 array_merge($m, [
                     'join_date'  => '2025-01-01',
                     'is_active'  => true,
-                    'notification_preference' => 'all',
+                    'notification_preference' => 'both',
                 ])
             );
             $memberMap[$m['first_name'] . ' ' . $m['last_name']] = $member->id;
@@ -194,9 +194,10 @@ class MembersAndContributionsSeeder extends Seeder
                     'member_id' => $id($c['member']),
                     'paid_at'   => $date,
                 ], array_merge($b, [
-                    'penalty'      => 0,
-                    'penalty_type' => null,
-                    'notes'        => $notes,
+                    'penalty'        => 0,
+                    'penalty_type'   => null,
+                    'payment_method' => 'mpesa',
+                    'notes'          => $notes,
                 ]));
             }
         }
@@ -222,27 +223,36 @@ class MembersAndContributionsSeeder extends Seeder
         ];
 
         foreach ($febContributions as $c) {
-            $b = $breakdown($c['total']);
-            $extra = $c['total'] - 3500;
+            $actualTotal = $c['total'];
+            $extra = $actualTotal - 3500;
             $penalty = 0;
             $penaltyType = null;
             $notes = 'Payment via ' . strtoupper($c['method']);
 
-            if ($extra == 200) {
+            if ($extra == 100) {
+                $penalty = 100;
+                $penaltyType = 'lateness';
+                $notes .= '. Includes KES 100 fine.';
+                $actualTotal -= 100;
+            } elseif ($extra == 200) {
                 $penalty = 200;
-                $penaltyType = 'late_attendance';
+                $penaltyType = 'absenteeism';
                 $notes .= '. Includes KES 200 fine.';
+                $actualTotal -= 200;
             } elseif ($extra > 0) {
                 $notes .= '. Extra KES ' . number_format($extra) . ' (catch-up / loan repayment).';
             }
+
+            $b = $breakdown($actualTotal);
 
             Contribution::firstOrCreate([
                 'member_id' => $id($c['member']),
                 'paid_at'   => $febDate,
             ], array_merge($b, [
-                'penalty'      => $penalty,
-                'penalty_type' => $penaltyType,
-                'notes'        => $notes,
+                'penalty'        => $penalty,
+                'penalty_type'   => $penaltyType,
+                'payment_method' => $c['method'],
+                'notes'          => $notes,
             ]));
         }
 
@@ -266,27 +276,73 @@ class MembersAndContributionsSeeder extends Seeder
         ];
 
         foreach ($marContributions as $c) {
-            $b = $breakdown($c['total']);
-            $extra = $c['total'] - 3500;
+            $actualTotal = $c['total'];
+            $extra = $actualTotal - 3500;
+            $penalty = 0;
+            $penaltyType = null;
+            $notes = 'Payment via ' . strtoupper($c['method']);
+
+            if ($extra == 100) {
+                $penalty = 100;
+                $penaltyType = 'lateness';
+                $notes .= '. Includes KES 100 fine.';
+                $actualTotal -= 100;
+            } elseif ($extra == 200) {
+                $penalty = 200;
+                $penaltyType = 'absenteeism';
+                $notes .= '. Includes KES 200 fine.';
+                $actualTotal -= 200;
+            } elseif ($extra > 0) {
+                $notes .= '. Extra KES ' . number_format($extra) . ' (catch-up / loan repayment).';
+            }
+
+            $b = $breakdown($actualTotal);
+
+            Contribution::firstOrCreate([
+                'member_id' => $id($c['member']),
+                'paid_at'   => $marDate,
+            ], array_merge($b, [
+                'penalty'        => $penalty,
+                'penalty_type'   => $penaltyType,
+                'payment_method' => $c['method'],
+                'notes'          => $notes,
+            ]));
+        }
+
+        // ── April 2026 Contributions (early payments before meeting) ─
+        $aprContributions = [
+            ['member' => 'Mike C',      'total' => 3500, 'method' => 'mpesa',  'paid_at' => '2026-04-03'],
+            ['member' => 'Catherine',   'total' => 4000, 'method' => 'mpesa',  'paid_at' => '2026-04-05'],
+            ['member' => 'Torry',       'total' => 6500, 'method' => 'mpesa',  'paid_at' => '2026-04-11'],
+            ['member' => 'Abigail',     'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-18'],
+        ];
+
+        foreach ($aprContributions as $c) {
+            $actualTotal = $c['total'];
+            $extra = $actualTotal - 3500;
             $penalty = 0;
             $penaltyType = null;
             $notes = 'Payment via ' . strtoupper($c['method']);
 
             if ($extra == 200) {
                 $penalty = 200;
-                $penaltyType = 'late_attendance';
+                $penaltyType = 'absenteeism';
                 $notes .= '. Includes KES 200 fine.';
+                $actualTotal -= 200;
             } elseif ($extra > 0) {
                 $notes .= '. Extra KES ' . number_format($extra) . ' (catch-up / loan repayment).';
             }
 
+            $b = $breakdown($actualTotal);
+
             Contribution::firstOrCreate([
                 'member_id' => $id($c['member']),
-                'paid_at'   => $marDate,
+                'paid_at'   => $c['paid_at'],
             ], array_merge($b, [
-                'penalty'      => $penalty,
-                'penalty_type' => $penaltyType,
-                'notes'        => $notes,
+                'penalty'        => $penalty,
+                'penalty_type'   => $penaltyType,
+                'payment_method' => $c['method'],
+                'notes'          => $notes,
             ]));
         }
     }

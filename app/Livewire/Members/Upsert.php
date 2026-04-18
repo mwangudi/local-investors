@@ -43,7 +43,7 @@ class Upsert extends Component
             $this->member = $member;
             $this->first_name = $member->first_name;
             $this->last_name = $member->last_name;
-            $this->email = $member->email;
+            $this->email = $member->email ?? '';
             $this->phone = $member->phone ?? '';
             $this->join_date = $member->join_date ? $member->join_date->format('Y-m-d') : null;
             $this->is_active = $member->is_active;

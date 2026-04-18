@@ -19,6 +19,7 @@ class Contribution extends Model
         'type',
         'notes',
         'paid_at',
+        'payment_method',
     ];
 
     protected $casts = [
