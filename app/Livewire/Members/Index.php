@@ -64,6 +64,9 @@ class Index extends Component
             ->when($this->statusFilter !== '', function ($query) {
                 $query->where('is_active', $this->statusFilter);
             })
+            ->withSum('contributions', 'shares')
+            ->withSum('contributions', 'welfare')
+            ->withSum('contributions', 'merry_go_round')
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 

@@ -109,6 +109,8 @@
                                         @endif
                                     </th>
                                     <th>Status</th>
+                                    <th class="text-end">Total Shares</th>
+                                    <th class="text-end">Total Contributed</th>
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
@@ -147,6 +149,8 @@
                                                 {{ $member->is_active ? 'Active' : 'Inactive' }}
                                             </span>
                                         </td>
+                                        <td class="text-end fw-semibold">KES {{ number_format($member->contributions_sum_shares ?? 0, 0) }}</td>
+                                        <td class="text-end fw-semibold">KES {{ number_format(($member->contributions_sum_shares ?? 0) + ($member->contributions_sum_welfare ?? 0) + ($member->contributions_sum_merry_go_round ?? 0), 0) }}</td>
                                         <td>
                                             <div class="hstack gap-2 justify-content-end">
                                                 <a href="{{ route('members.edit', $member) }}" class="avatar-text avatar-md" title="View/Edit">
@@ -185,7 +189,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center text-muted py-4">
+                                        <td colspan="9" class="text-center text-muted py-4">
                                             <i class="feather-users fs-1 mb-3 d-block"></i>
                                             No members found
                                         </td>
