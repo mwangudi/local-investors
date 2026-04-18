@@ -2,6 +2,11 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use App\Models\Loan;
+use App\Observers\UserObserver;
+use App\Observers\LoanObserver;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Filament\Forms\Components\Component;
 use Livewire\Livewire;
@@ -21,7 +26,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \App\Models\Loan::observe(\App\Observers\LoanObserver::class);
+        Loan::observe(LoanObserver::class);
+        User::observe(UserObserver::class);
 
         // Enable live validation for ALL Filament form components
         Component::configureUsing(function (Component $component) {
@@ -38,6 +44,11 @@ class AppServiceProvider extends ServiceProvider
                 } catch (\Throwable $e) {
                 }
             }
+        });
+
+        // An admin can do anything — no need to assign every permission.
+        Gate::before(function ($user, $ability) {
+            return $user->hasRole('admin') ? true : null;
         });
     }
 }
