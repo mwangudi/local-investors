@@ -33,6 +33,12 @@ class Crm extends Component
     public $pendingLoansCount;
     public $cashOnHand;
 
+    // Contribution breakdown
+    public $totalShares;
+    public $totalWelfare;
+    public $totalTableBanking;
+    public $totalPenalties;
+
     public $recentContributions;
     public $recentLoans;
     public $memberSnapshot;
@@ -47,7 +53,12 @@ class Crm extends Component
         }
 
         // Contributions stats
-        $this->totalContributions = Contribution::sum('shares') + Contribution::sum('welfare') + Contribution::sum('merry_go_round');
+        $this->totalShares = (float) Contribution::sum('shares');
+        $this->totalWelfare = (float) Contribution::sum('welfare');
+        $this->totalTableBanking = (float) Contribution::sum('merry_go_round');
+        $this->totalPenalties = (float) Contribution::sum('penalty')
+            + (float) Income::where('category', 'fine')->sum('amount');
+        $this->totalContributions = $this->totalShares + $this->totalWelfare + $this->totalTableBanking;
         $this->monthlyContributions = Contribution::whereMonth('paid_at', now()->month)
             ->whereYear('paid_at', now()->year)
             ->sum('shares') + Contribution::whereMonth('paid_at', now()->month)
@@ -101,6 +112,8 @@ class Crm extends Component
                     + $member->contributions->sum('welfare')
                     + $member->contributions->sum('merry_go_round');
                 $totalShares = $member->contributions->sum('shares');
+                $totalWelfare = $member->contributions->sum('welfare');
+                $totalPenalties = $member->contributions->sum('penalty');
 
                 $activeLoans = $member->loans->where('status', 'disbursed');
                 $activeLoansCount = $activeLoans->count();
@@ -116,6 +129,8 @@ class Crm extends Component
                     'name'               => $member->full_name,
                     'total_contributions' => $totalContributions,
                     'total_shares'        => $totalShares,
+                    'total_welfare'       => $totalWelfare,
+                    'total_penalties'     => $totalPenalties,
                     'active_loans'       => $activeLoansCount,
                     'loan_balance'       => $loanBalance,
                 ];

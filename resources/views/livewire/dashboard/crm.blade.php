@@ -155,6 +155,54 @@
         <div class="col-xxl-3 col-md-6">
             <div class="card stretch stretch-full">
                 <div class="card-body d-flex align-items-center gap-3">
+                    <div class="avatar-text avatar-md bg-soft-primary text-primary"><i class="feather-layers"></i></div>
+                    <div>
+                        <div class="fs-14 fw-semibold text-muted">Total Shares</div>
+                        <div class="fs-5 fw-bold text-primary">KES {{ number_format($totalShares, 0) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-3 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="avatar-text avatar-md bg-soft-info text-info"><i class="feather-heart"></i></div>
+                    <div>
+                        <div class="fs-14 fw-semibold text-muted">Total Welfare</div>
+                        <div class="fs-5 fw-bold text-info">KES {{ number_format($totalWelfare, 0) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-3 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="avatar-text avatar-md bg-soft-success text-success"><i class="feather-repeat"></i></div>
+                    <div>
+                        <div class="fs-14 fw-semibold text-muted">Total Table Banking</div>
+                        <div class="fs-5 fw-bold text-success">KES {{ number_format($totalTableBanking, 0) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-3 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="avatar-text avatar-md bg-soft-warning text-warning"><i class="feather-alert-circle"></i></div>
+                    <div>
+                        <div class="fs-14 fw-semibold text-muted">Total Penalties / Fines</div>
+                        <div class="fs-5 fw-bold text-warning">KES {{ number_format($totalPenalties, 0) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Snapshot -->
+    <div class="row g-3 mb-2">
+        <div class="col-xxl-3 col-md-6">
+            <div class="card stretch stretch-full">
+                <div class="card-body d-flex align-items-center gap-3">
                     <div class="avatar-text avatar-md bg-soft-success text-success"><i class="feather-trending-up"></i></div>
                     <div>
                         <div class="fs-14 fw-semibold text-muted">Total Income</div>
@@ -213,8 +261,10 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Member</th>
-                                    <th class="text-end">Total Contributions</th>
-                                    <th class="text-end">Total Shares</th>
+                                    <th class="text-end">Shares</th>
+                                    <th class="text-end">Welfare</th>
+                                    <th class="text-end">Total Contributed</th>
+                                    <th class="text-end">Penalties</th>
                                     <th class="text-center">Active Loans</th>
                                     <th class="text-end">Loan Balance</th>
                                 </tr>
@@ -224,8 +274,10 @@
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td class="fw-semibold">{{ $member['name'] }}</td>
-                                        <td class="text-end">KES {{ number_format($member['total_contributions'], 2) }}</td>
-                                        <td class="text-end">KES {{ number_format($member['total_shares'], 2) }}</td>
+                                        <td class="text-end">KES {{ number_format($member['total_shares'], 0) }}</td>
+                                        <td class="text-end">KES {{ number_format($member['total_welfare'], 0) }}</td>
+                                        <td class="text-end">KES {{ number_format($member['total_contributions'], 0) }}</td>
+                                        <td class="text-end {{ $member['total_penalties'] > 0 ? 'text-warning' : '' }}">KES {{ number_format($member['total_penalties'], 0) }}</td>
                                         <td class="text-center">
                                             @if($member['active_loans'] > 0)
                                                 <span class="badge bg-soft-warning text-warning">{{ $member['active_loans'] }}</span>
@@ -239,7 +291,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">No active members</td>
+                                        <td colspan="8" class="text-center text-muted py-4">No active members</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -247,10 +299,12 @@
                             <tfoot class="table-light">
                                 <tr class="fw-bold">
                                     <td colspan="2">Totals</td>
-                                    <td class="text-end">KES {{ number_format(collect($memberSnapshot)->sum('total_contributions'), 2) }}</td>
-                                    <td class="text-end">KES {{ number_format(collect($memberSnapshot)->sum('total_shares'), 2) }}</td>
+                                    <td class="text-end">KES {{ number_format(collect($memberSnapshot)->sum('total_shares'), 0) }}</td>
+                                    <td class="text-end">KES {{ number_format(collect($memberSnapshot)->sum('total_welfare'), 0) }}</td>
+                                    <td class="text-end">KES {{ number_format(collect($memberSnapshot)->sum('total_contributions'), 0) }}</td>
+                                    <td class="text-end text-warning">KES {{ number_format(collect($memberSnapshot)->sum('total_penalties'), 0) }}</td>
                                     <td class="text-center">{{ collect($memberSnapshot)->sum('active_loans') }}</td>
-                                    <td class="text-end text-danger">KES {{ number_format(collect($memberSnapshot)->sum('loan_balance'), 2) }}</td>
+                                    <td class="text-end text-danger">KES {{ number_format(collect($memberSnapshot)->sum('loan_balance'), 0) }}</td>
                                 </tr>
                             </tfoot>
                             @endif
