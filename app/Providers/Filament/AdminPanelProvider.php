@@ -33,7 +33,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(asset('images/logo.png'))
             ->favicon(asset('images/logo-mini.png'))
             ->brandLogoHeight('4rem')
-            ->maxContentWidth(\Filament\Support\Enums\MaxWidth::Full)
+            ->maxContentWidth('full')
             ->sidebarCollapsibleOnDesktop()
             ->navigationGroups([
                 'Menus',

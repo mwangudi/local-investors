@@ -8,6 +8,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\Loan;
 use App\Channels\SmsChannel;
+use App\Channels\LoggingMailChannel;
 
 class LoanStatusChanged extends Notification
 {
@@ -34,7 +35,7 @@ class LoanStatusChanged extends Notification
         $preference = $notifiable->notification_preference ?? 'email';
 
         if ($preference === 'email' || $preference === 'both') {
-            $channels[] = 'mail';
+            $channels[] = LoggingMailChannel::class;
         }
 
         if ($preference === 'sms' || $preference === 'both') {

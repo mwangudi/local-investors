@@ -15,9 +15,9 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class CashReturnResource extends Resource
 {
-    protected static ?string $model = CashReturn::class;
-
     use \App\Filament\Traits\HasIconizedTableActions;
+
+    protected static ?string $model = CashReturn::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-path-rounded-square'; // Icon representing return
     protected static ?string $navigationGroup = 'Financials';

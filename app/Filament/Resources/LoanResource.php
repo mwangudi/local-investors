@@ -325,6 +325,19 @@ class LoanResource extends Resource
                         ),
 
                 ])
+                ->headerActions([
+                    \Filament\Tables\Actions\Action::make('exportPdf')
+                        ->label('Export PDF')
+                        ->icon('heroicon-o-document-arrow-down')
+                        ->color('success')
+                        ->url(fn ($livewire) => route('reports.loans-pdf', [
+                            'status' => $livewire->tableFilters['status']['value'] ?? null,
+                            'from' => $livewire->tableFilters['disbursed_at']['from'] ?? null,
+                            'to' => $livewire->tableFilters['disbursed_at']['to'] ?? null,
+                            'tab' => $livewire->activeTab ?? null,
+                        ]))
+                        ->openUrlInNewTab(),
+                ])
                 ->actions([
                     ViewAction::make()
                         ->hidden(fn() => !auth()->user()?->hasRole('admin')),
