@@ -128,6 +128,14 @@
                 </li>
                 @endrole
 
+                <!-- Projects -->
+                <li class="nxl-item {{ request()->routeIs('projects.*') ? 'active' : '' }}">
+                    <a href="{{ route('projects.index') }}" class="nxl-link">
+                        <span class="nxl-micon"><i class="feather-folder"></i></span>
+                        <span class="nxl-mtext">Projects</span>
+                    </a>
+                </li>
+
                 <!-- Settings -->
                 @role('admin')
                 <li class="nxl-item {{ request()->routeIs('settings') ? 'active' : '' }}">

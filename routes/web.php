@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 
@@ -28,6 +27,9 @@ use App\Livewire\Members\Statement as MembersStatement;
 use App\Livewire\Fines\Index as FinesIndex;
 use App\Livewire\Fines\Upsert as FinesUpsert;
 use App\Livewire\Dividends\Index as DividendsIndex;
+use App\Livewire\Projects\Index as ProjectsIndex;
+use App\Livewire\Projects\Upsert as ProjectsUpsert;
+use App\Livewire\Projects\Show as ProjectsShow;
 use App\Livewire\Portal\Dashboard as PortalDashboard;
 use App\Livewire\Portal\ApplyLoan as PortalApplyLoan;
 
@@ -67,9 +69,6 @@ Route::post('/logout', function () {
 
 // Authenticated Routes
 Route::middleware('auth')->group(function () {
-
-    // Reports PDF (from local)
-    Route::get('/reports/loans-pdf', [ReportController::class, 'loansReport'])->name('reports.loans-pdf');
 
     // Admin panel — accessible to admins and treasurers only
     Route::middleware('role:admin|treasurer')->group(function () {
@@ -140,6 +139,14 @@ Route::middleware('auth')->group(function () {
 
         // Dividends / share-out
         Route::get('/dividends', DividendsIndex::class)->name('dividends');
+
+        // Projects (trips, land purchases, etc.)
+        Route::prefix('projects')->name('projects.')->group(function () {
+            Route::get('/', ProjectsIndex::class)->name('index');
+            Route::get('/create', ProjectsUpsert::class)->name('create');
+            Route::get('/{project}/edit', ProjectsUpsert::class)->name('edit');
+            Route::get('/{project}', ProjectsShow::class)->name('show');
+        });
     });
 
     // Member statement — accessible by staff for any member, and by members
