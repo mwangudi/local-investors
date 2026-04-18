@@ -22,6 +22,7 @@ class Upsert extends Component
     public $penalty = '';
     public $penalty_type = '';
     public $paid_at;
+    public $contribution_period;
     public $payment_method = 'mpesa';
     public $notes = '';
 
@@ -33,6 +34,7 @@ class Upsert extends Component
         return [
             'member_id' => 'required|exists:members,id',
             'paid_at' => 'required|date',
+            'contribution_period' => 'required|date',
             'shares' => 'required|numeric|min:0',
             'welfare' => 'required|numeric|min:0',
             'merry_go_round' => 'required|numeric|min:0',
@@ -51,6 +53,7 @@ class Upsert extends Component
             $this->contribution = $contribution;
             $this->member_id = $contribution->member_id;
             $this->paid_at = $contribution->paid_at->format('Y-m-d');
+            $this->contribution_period = $contribution->contribution_period ? $contribution->contribution_period->format('Y-m') : '';
             $this->shares = $contribution->shares;
             $this->welfare = $contribution->welfare;
             $this->merry_go_round = $contribution->merry_go_round;
@@ -60,6 +63,7 @@ class Upsert extends Component
             $this->notes = $contribution->notes ?? '';
         } else {
             $this->paid_at = date('Y-m-d');
+            $this->contribution_period = date('Y-m');
             // Set defaults
             $this->shares = '';
             $this->welfare = '';
@@ -76,6 +80,11 @@ class Upsert extends Component
     public function save(): void
     {
         $validated = $this->validate();
+
+        // Convert contribution_period from YYYY-MM to YYYY-MM-01 format, ensuring valid date
+        if (!empty($validated['contribution_period'])) {
+            $validated['contribution_period'] = date('Y-m-01', strtotime($validated['contribution_period']));
+        }
 
         if ($this->contribution) {
             $this->contribution->update($validated);

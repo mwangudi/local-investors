@@ -11,6 +11,7 @@ class Contribution extends Model
 
     protected $fillable = [
         'member_id',
+        'contribution_period',
         'shares',
         'welfare',
         'merry_go_round',
@@ -24,6 +25,7 @@ class Contribution extends Model
 
     protected $casts = [
         'paid_at' => 'datetime',
+        'contribution_period' => 'date',
         'shares' => 'decimal:2',
         'welfare' => 'decimal:2',
         'merry_go_round' => 'decimal:2',

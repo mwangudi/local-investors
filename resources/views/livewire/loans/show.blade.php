@@ -94,6 +94,7 @@
                 </div>
             </div>
 
+            @php
                 $pct      = $required > 0 ? min(100, round($current / $required * 100)) : 0;
             @endphp
             <div class="card">

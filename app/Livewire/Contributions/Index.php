@@ -68,7 +68,11 @@ class Index extends Component
                 });
             })
             ->when($this->filterMonth, function ($query) {
-                $query->whereMonth('paid_at', $this->filterMonth);
+                // If it is stored, we can filter by the month of contribution_period
+                $query->whereMonth('contribution_period', $this->filterMonth)
+                      ->orWhere(function ($q) {
+                          $q->whereNull('contribution_period')->whereMonth('paid_at', $this->filterMonth);
+                      });
             })
             ->when($this->filterMethod, function ($query) {
                 $query->where('payment_method', $this->filterMethod);

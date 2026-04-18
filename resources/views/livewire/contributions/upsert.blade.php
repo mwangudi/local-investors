@@ -32,7 +32,7 @@
                     <form wire:submit="save" novalidate>
                         <div class="row g-3">
                             <!-- Member -->
-                            <div class="col-md-6" wire:ignore>
+                            <div class="col-md-4" wire:ignore>
                                 <label for="member_id" class="form-label">Member <span class="text-danger">*</span></label>
                                 <select class="form-select select2 @error('member_id') is-invalid @enderror" 
                                         id="member_id" 
@@ -48,9 +48,19 @@
                                 @enderror
                             </div>
 
-                            <!-- Date -->
+                            <!-- Period / Month -->
+                            <div class="col-md-2">
+                                <label for="contribution_period" class="form-label">Month <span class="text-danger">*</span></label>
+                                <input type="month" class="form-control @error('contribution_period') is-invalid @enderror" 
+                                       id="contribution_period" wire:model="contribution_period">
+                                @error('contribution_period')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Date Details -->
                             <div class="col-md-3">
-                                <label for="paid_at" class="form-label">Date <span class="text-danger">*</span></label>
+                                <label for="paid_at" class="form-label">Date Paid <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control @error('paid_at') is-invalid @enderror" 
                                        id="paid_at" wire:model="paid_at">
                                 @error('paid_at')

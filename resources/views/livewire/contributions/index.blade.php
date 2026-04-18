@@ -88,6 +88,12 @@
                                             <i class="feather-chevron-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ms-1"></i>
                                         @endif
                                     </th>
+                                    <th wire:click="sortBy('contribution_period')" style="cursor: pointer;">
+                                        Period
+                                        @if($sortField === 'contribution_period')
+                                            <i class="feather-chevron-{{ $sortDirection === 'asc' ? 'up' : 'down' }} ms-1"></i>
+                                        @endif
+                                    </th>
                                     <th>Member</th>
                                     <th class="text-end">Shares</th>
                                     <th class="text-end">Welfare</th>
@@ -100,6 +106,13 @@
                                 @forelse($contributions as $contribution)
                                     <tr class="single-item">
                                         <td>{{ $contribution->paid_at->format('Y-m-d') }}</td>
+                                        <td>
+                                            @if($contribution->contribution_period)
+                                                <span class="badge bg-soft-info text-info">{{ $contribution->contribution_period->format('M Y') }}</span>
+                                            @else
+                                                <span class="badge bg-soft-secondary text-secondary">{{ $contribution->paid_at->format('M Y') }}</span>
+                                            @endif
+                                        </td>
                                         <td>
                                             @if($contribution->member)
                                                 <a href="{{ route('members.edit', $contribution->member) }}" class="hstack gap-3">
@@ -154,7 +167,7 @@
                             </tbody>
                             <tfoot class="table-light">
                                 <tr class="fw-bold">
-                                    <td colspan="2">Filtered Totals</td>
+                                    <td colspan="3">Filtered Totals</td>
                                     <td class="text-end">KES {{ number_format($totalShares, 2) }}</td>
                                     <td class="text-end">KES {{ number_format($totalWelfare, 2) }}</td>
                                     <td class="text-end">KES {{ number_format($grandTotal, 2) }}</td>

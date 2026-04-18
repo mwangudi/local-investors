@@ -205,6 +205,9 @@ class Show extends Component
     {
         return view('livewire.loans.show', [
             'repayments' => $this->loan->repayments()->latest('paid_at')->get(),
+            'approvals'  => $this->loan->approvals()->with('member')->latest()->get(),
+            'current'    => $this->loan->approvals()->count(),
+            'required'   => (int) (ChamaSetting::current()->min_loan_approvals ?? 1),
         ]);
     }
 }
