@@ -11,6 +11,7 @@ class Withdrawal extends Model
         'amount',
         'withdrawn_at',
         'member_id',
+        'project_id',
     ];
 
     protected $casts = [
@@ -21,5 +22,10 @@ class Withdrawal extends Model
     public function member()
     {
         return $this->belongsTo(Member::class);
+    }
+
+    public function project(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 }

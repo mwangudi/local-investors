@@ -29,12 +29,25 @@ class LandProjectSeeder extends Seeder
      */
     public function run(): void
     {
+        // ── Create Project ───────────────────────────────────────
+        $project = \App\Models\Project::firstOrCreate(
+            ['name' => 'Land Purchase Project'],
+            [
+                'description' => 'Land purchase project — January 2026.',
+                'status' => 'completed',
+                'progress' => 100,
+                'start_date' => '2026-01-29',
+                'budget' => 420000,
+            ]
+        );
+
         // ── Zimele Withdrawal ────────────────────────────────────
-        Withdrawal::firstOrCreate(
+        Withdrawal::updateOrCreate(
             ['description' => 'Zimele withdrawal — Land project', 'withdrawn_at' => '2026-01-29'],
             [
                 'amount'    => 420000,
                 'member_id' => null,
+                'project_id' => $project->id,
             ]
         );
 
@@ -45,41 +58,47 @@ class LandProjectSeeder extends Seeder
                 'amount'      => 150000,
                 'spent_at'    => '2026-01-29',
                 'category'    => 'Land purchase',
+                'project_id'  => $project->id,
             ],
             [
                 'description' => 'Land deposit — K Unity Sacco Ltd A/C 00510000027576. Ref: UATR44W9RH',
                 'amount'      => 150000,
                 'spent_at'    => '2026-01-29',
                 'category'    => 'Land purchase',
+                'project_id'  => $project->id,
             ],
             [
                 'description' => 'Land deposit — K Unity Sacco Ltd A/C 00510000027576. Ref: FT26030GFBYT / UAUT76HGVD',
                 'amount'      => 100000,
                 'spent_at'    => '2026-01-30',
                 'category'    => 'Land purchase',
+                'project_id'  => $project->id,
             ],
             [
                 'description' => 'Lawyer fees — Ndwiga Law Advocates. Ref: UATR44W3NK',
                 'amount'      => 10000,
                 'spent_at'    => '2026-01-29',
                 'category'    => 'Legal fees',
+                'project_id'  => $project->id,
             ],
             [
                 'description' => 'Land search fee',
                 'amount'      => 5000,
                 'spent_at'    => '2026-01-29',
                 'category'    => 'Legal fees',
+                'project_id'  => $project->id,
             ],
             [
                 'description' => 'Transaction costs — land project payments',
                 'amount'      => 426.50,
                 'spent_at'    => '2026-01-30',
                 'category'    => 'Bank charges',
+                'project_id'  => $project->id,
             ],
         ];
 
         foreach ($expenditures as $e) {
-            Expenditure::firstOrCreate(
+            Expenditure::updateOrCreate(
                 ['description' => $e['description']],
                 $e
             );
@@ -92,11 +111,12 @@ class LandProjectSeeder extends Seeder
             [
                 'amount'      => round($surplus, 2),
                 'returned_at' => '2026-01-31',
+                'project_id'  => $project->id,
             ]
         );
 
         // ── Merry-go-round payout (Feb) ──────────────────────────
-        Expenditure::firstOrCreate(
+        Expenditure::updateOrCreate(
             ['description' => 'Merry-go-round payout — Charles Kingori. Ref: UATR44VDCH'],
             [
                 'amount'   => 5000,

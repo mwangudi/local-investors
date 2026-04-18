@@ -18,6 +18,7 @@ class Income extends Model
         'category',
         'fine_type',
         'member_id',
+        'project_id',
     ];
 
     protected $casts = [
@@ -33,5 +34,10 @@ class Income extends Model
     public function member(): BelongsTo
     {
         return $this->belongsTo(Member::class);
+    }
+
+    public function project(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 }

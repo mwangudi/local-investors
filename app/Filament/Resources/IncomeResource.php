@@ -92,6 +92,12 @@ class IncomeResource extends Resource
                             ->nullable()
                             ->visible(fn(Forms\Get $get) => $get('category') === 'Loan Interest')
                             ->columnSpan(1),
+                        Forms\Components\Select::make('project_id')
+                            ->relationship('project', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->label('Related Project/Event (Optional)')
+                            ->columnSpan(1),
 
                         Forms\Components\Textarea::make('description')
                             ->columnSpan('full')
@@ -134,6 +140,9 @@ class IncomeResource extends Resource
                         ->label('Fine Type')
                         ->searchable()
                         ->toggleable(isToggledHiddenByDefault: true),
+                    Tables\Columns\TextColumn::make('project.name')
+                        ->label('Project')
+                        ->searchable(),
                 ])
                 ->defaultSort('received_at', 'desc')
                 ->filters([

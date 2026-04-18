@@ -29,4 +29,24 @@ class Project extends Model
     {
         return $this->belongsTo(Customer::class);
     }
+
+    public function expenditures(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Expenditure::class);
+    }
+
+    public function withdrawals(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Withdrawal::class);
+    }
+
+    public function incomes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Income::class);
+    }
+
+    public function cashReturns(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(CashReturn::class);
+    }
 }

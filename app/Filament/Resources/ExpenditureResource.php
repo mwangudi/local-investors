@@ -60,6 +60,12 @@ class ExpenditureResource extends Resource
                             ->searchable()
                             ->preload()
                             ->columnSpan(['md' => 4]),
+                        Forms\Components\Select::make('project_id')
+                            ->relationship('project', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('Select project/event')
+                            ->columnSpan(['md' => 4]),
                     ])
                     ->columns(12),
             ]);
@@ -82,6 +88,9 @@ class ExpenditureResource extends Resource
                         ->date()
                         ->sortable(),
                     Tables\Columns\TextColumn::make('category')
+                        ->searchable(),
+                    Tables\Columns\TextColumn::make('project.name')
+                        ->label('Project')
                         ->searchable(),
                     Tables\Columns\TextColumn::make('created_at')
                         ->dateTime()

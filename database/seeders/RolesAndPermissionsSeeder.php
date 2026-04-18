@@ -33,6 +33,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'withdrawals.view', 'withdrawals.manage',
             'cash-returns.view', 'cash-returns.manage',
             // Reports & settings
+            'projects.view', 'projects.manage',
             'reports.view',
             'settings.manage',
             'users.manage',
@@ -57,6 +58,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'expenditures.view', 'expenditures.manage',
             'withdrawals.view', 'withdrawals.manage',
             'cash-returns.view', 'cash-returns.manage',
+            'projects.view', 'projects.manage',
             'reports.view',
         ]);
 

@@ -10,10 +10,16 @@ class CashReturn extends Model
         'amount',
         'returned_at',
         'description',
+        'project_id',
     ];
 
     protected $casts = [
         'returned_at' => 'date',
         'amount' => 'integer',
     ];
+
+    public function project(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
 }

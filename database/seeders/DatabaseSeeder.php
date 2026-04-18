@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             MembersAndContributionsSeeder::class,
             LoanSeeder::class,
             LandProjectSeeder::class,
+            NanyukiTripSeeder::class,
         ]);
     }
 }

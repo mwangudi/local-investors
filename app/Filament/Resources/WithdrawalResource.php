@@ -58,6 +58,12 @@ class WithdrawalResource extends Resource
                             ->label('Withdrawn On')
                             ->default(now())
                             ->columnSpan(['md' => 4]),
+                        Forms\Components\Select::make('project_id')
+                            ->relationship('project', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->placeholder('Select project/event')
+                            ->columnSpan(['md' => 4]),
                     ])
                     ->columns(12),
             ]);
@@ -85,6 +91,9 @@ class WithdrawalResource extends Resource
                         ->date()
                         ->sortable()
                         ->label('Withdrawn On'),
+                    Tables\Columns\TextColumn::make('project.name')
+                        ->label('Project')
+                        ->searchable(),
                     Tables\Columns\TextColumn::make('created_at')
                         ->dateTime()
                         ->sortable()

@@ -45,6 +45,12 @@ class CashReturnResource extends Resource
                             ->required()
                             ->default(now())
                             ->columnSpan(1),
+                        Forms\Components\Select::make('project_id')
+                            ->relationship('project', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->label('Related Project/Event (Optional)')
+                            ->columnSpan(1),
                         Forms\Components\Textarea::make('description')
                             ->label('Reason / Description')
                             ->rows(3)
@@ -70,6 +76,9 @@ class CashReturnResource extends Resource
                         ->summarize(Tables\Columns\Summarizers\Sum::make()->money('KES')),
                     Tables\Columns\TextColumn::make('description')
                         ->limit(50),
+                    Tables\Columns\TextColumn::make('project.name')
+                        ->label('Project')
+                        ->searchable(),
                     Tables\Columns\TextColumn::make('created_at')
                         ->dateTime()
                         ->sortable()
