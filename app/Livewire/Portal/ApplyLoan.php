@@ -26,6 +26,17 @@ class ApplyLoan extends Component
         $this->member = Member::find($user->member_id);
         abort_unless($this->member, 404);
 
+        // Block if member already has an active loan
+        $existingLoan = Loan::where('member_id', $this->member->id)
+            ->whereIn('status', ['applied', 'approved', 'disbursed'])
+            ->first();
+
+        if ($existingLoan) {
+            session()->flash('error', 'You already have an active loan (Loan #' . $existingLoan->id . '). Please clear it before applying for a new one.');
+            $this->redirect(route('portal.dashboard'));
+            return;
+        }
+
         $settings = ChamaSetting::current();
         $this->term_months = $settings->loan_duration_months ?? 3;
     }

@@ -74,6 +74,16 @@ class Upsert extends Component
             $this->loan->update($validated);
             session()->flash('success', 'Loan updated successfully.');
         } else {
+            // Block if member already has an active loan
+            $existing = Loan::where('member_id', $validated['member_id'])
+                ->whereIn('status', ['applied', 'approved', 'disbursed'])
+                ->first();
+
+            if ($existing) {
+                $this->addError('member_id', 'This member already has an active loan (#' . $existing->id . ').');
+                return;
+            }
+
             $loan = Loan::create($validated);
 
             // In-app notification: new loan request → admins
