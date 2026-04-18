@@ -22,7 +22,7 @@
                     <div class="row g-3 align-items-end">
                         <div class="col-md-3">
                             <label class="form-label">Report Type</label>
-                            <select class="form-select" wire:model.live="reportType">
+                            <select class="form-select select2" data-placeholder="Select report type" wire:model.live="reportType">
                                 <option value="members">Members Report</option>
                                 <option value="contributions">Contributions Report</option>
                                 <option value="loans">Loans Report</option>
