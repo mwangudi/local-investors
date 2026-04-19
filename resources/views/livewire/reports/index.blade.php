@@ -49,19 +49,14 @@
                                 @endfor
                             </select>
                         </div>
-                        <div class="col-12">
+                        <div class="col-md-3">
                             <label class="form-label">Select Months</label>
-                            <div class="d-flex flex-wrap gap-3">
-                                @foreach(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] as $idx => $monthName)
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" 
-                                               value="{{ $idx + 1 }}" 
-                                               wire:model="selectedMonths"
-                                               id="month_{{ $idx + 1 }}">
-                                        <label class="form-check-label" for="month_{{ $idx + 1 }}">{{ $monthName }}</label>
-                                    </div>
+                            <select class="form-select" wire:model="selectedMonths" multiple size="4">
+                                @foreach(['January','February','March','April','May','June','July','August','September','October','November','December'] as $idx => $monthName)
+                                    <option value="{{ $idx + 1 }}">{{ $monthName }}</option>
                                 @endforeach
-                            </div>
+                            </select>
+                            <small class="text-muted">Hold Ctrl to select multiple</small>
                         </div>
                         @endif
                         @if($reportType === 'loans')
