@@ -18,7 +18,7 @@ class Upsert extends Component
     public $member_id = '';
     public $amount = 0;
     public $interest_percent = 10;
-    public $term_months = 1;
+    public $term_months = 2;
     public $disbursed_at;
     public $status = 'applied';
 

@@ -162,58 +162,53 @@
             </div>
             @endif
 
-            <!-- Amortisation schedule -->
+            <!-- Repayment schedule: lump-sum at end of term -->
             @if(in_array($loan->status, ['approved','disbursed','repaid']) && $loan->term_months > 0)
                 @php
-                    $principal = (float) $loan->amount;
-                    $totalInterest = $principal * ($loan->interest_percent / 100);
-                    $totalDue = $principal + $totalInterest;
-                    $monthly  = round($totalDue / max(1, $loan->term_months), 2);
-                    $start    = $loan->disbursed_at ?: now();
-                    $remainingPaid = (float) $loan->total_repaid;
+                    $principal      = (float) $loan->amount;
+                    $totalInterest  = $principal * ($loan->interest_percent / 100);
+                    $totalDue       = $principal + $totalInterest;
+                    $start          = $loan->disbursed_at ?: now();
+                    $dueDate        = \Carbon\Carbon::parse($start)->copy()->addMonths($loan->term_months);
+                    $totalRepaid    = (float) $loan->total_repaid;
+                    $fullyPaid      = $totalRepaid >= $totalDue;
+                    $partiallyPaid  = !$fullyPaid && $totalRepaid > 0;
+                    $isOverdue      = $dueDate->isPast() && !$fullyPaid;
                 @endphp
                 <div class="card mb-3">
                     <div class="card-header py-2">
-                        <h6 class="card-title mb-0">Repayment Schedule ({{ $loan->term_months }} months)</h6>
+                        <h6 class="card-title mb-0">Repayment Schedule (due after {{ $loan->term_months }} months)</h6>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
                             <table class="table table-sm mb-0" style="font-size: 12px;">
                                 <thead>
                                     <tr>
-                                        <th>#</th>
                                         <th>Due Date</th>
-                                        <th class="text-end">Installment</th>
+                                        <th class="text-end">Principal</th>
+                                        <th class="text-end">Interest ({{ $loan->interest_percent }}%)</th>
+                                        <th class="text-end">Total Due</th>
                                         <th class="text-end">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @for($i = 1; $i <= $loan->term_months; $i++)
-                                        @php
-                                            $dueDate = \Carbon\Carbon::parse($start)->copy()->addMonths($i);
-                                            $coveredByPaid = $remainingPaid >= $monthly;
-                                            $partial = !$coveredByPaid && $remainingPaid > 0;
-                                            $paidThis = min($remainingPaid, $monthly);
-                                            $remainingPaid -= $paidThis;
-                                            $isOverdue = $dueDate->isPast() && !$coveredByPaid;
-                                        @endphp
-                                        <tr class="{{ $isOverdue ? 'table-danger' : '' }}">
-                                            <td>{{ $i }}</td>
-                                            <td>{{ $dueDate->format('Y-m-d') }}</td>
-                                            <td class="text-end">KES {{ number_format($monthly, 2) }}</td>
-                                            <td class="text-end">
-                                                @if($coveredByPaid)
-                                                    <span class="badge bg-soft-success text-success">Paid</span>
-                                                @elseif($partial)
-                                                    <span class="badge bg-soft-warning text-warning">Partial</span>
-                                                @elseif($isOverdue)
-                                                    <span class="badge bg-soft-danger text-danger">Overdue</span>
-                                                @else
-                                                    <span class="badge bg-soft-secondary text-secondary">Upcoming</span>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @endfor
+                                    <tr class="{{ $isOverdue ? 'table-danger' : '' }}">
+                                        <td>{{ $dueDate->format('Y-m-d') }}</td>
+                                        <td class="text-end">KES {{ number_format($principal, 2) }}</td>
+                                        <td class="text-end">KES {{ number_format($totalInterest, 2) }}</td>
+                                        <td class="text-end fw-bold">KES {{ number_format($totalDue, 2) }}</td>
+                                        <td class="text-end">
+                                            @if($fullyPaid)
+                                                <span class="badge bg-soft-success text-success">Paid</span>
+                                            @elseif($partiallyPaid)
+                                                <span class="badge bg-soft-warning text-warning">Partial (KES {{ number_format($totalRepaid, 2) }})</span>
+                                            @elseif($isOverdue)
+                                                <span class="badge bg-soft-danger text-danger">Overdue</span>
+                                            @else
+                                                <span class="badge bg-soft-secondary text-secondary">Upcoming</span>
+                                            @endif
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
