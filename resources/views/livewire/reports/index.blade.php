@@ -49,14 +49,16 @@
                                 @endfor
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-3" wire:ignore>
                             <label class="form-label">Select Months</label>
-                            <select class="form-select" wire:model="selectedMonths" multiple size="4">
+                            <select class="form-select select2" 
+                                    id="selectedMonths"
+                                    multiple
+                                    data-placeholder="Select months...">
                                 @foreach(['January','February','March','April','May','June','July','August','September','October','November','December'] as $idx => $monthName)
-                                    <option value="{{ $idx + 1 }}">{{ $monthName }}</option>
+                                    <option value="{{ $idx + 1 }}" {{ in_array($idx + 1, $selectedMonths) ? 'selected' : '' }}>{{ $monthName }}</option>
                                 @endforeach
                             </select>
-                            <small class="text-muted">Hold Ctrl to select multiple</small>
                         </div>
                         @endif
                         @if($reportType === 'loans')
@@ -305,4 +307,17 @@
         </div>
         @endif
     </div>
+
+    <script>
+        document.addEventListener('livewire:initialized', function () {
+            $('#selectedMonths').select2({
+                placeholder: 'Select months...',
+                closeOnSelect: false,
+                width: '100%'
+            }).on('change', function () {
+                var values = $(this).val() || [];
+                @this.set('selectedMonths', values.map(Number));
+            });
+        });
+    </script>
 </div>
