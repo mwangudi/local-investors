@@ -19,6 +19,8 @@ class Index extends Component
     public $startDate;
     public $endDate;
     public $loanStatus = '';
+    public $selectedMonths = [];
+    public $selectedYear;
     
     // Report data
     public $reportData = [];
@@ -28,6 +30,8 @@ class Index extends Component
     {
         $this->startDate = Carbon::now()->startOfMonth()->format('Y-m-d');
         $this->endDate = Carbon::now()->format('Y-m-d');
+        $this->selectedYear = (int) Carbon::now()->format('Y');
+        $this->selectedMonths = [(int) Carbon::now()->format('m')];
     }
 
     public function generateReport()
@@ -70,11 +74,20 @@ class Index extends Component
     protected function getContributionsReport()
     {
         return Contribution::with('member')
-            ->whereBetween('paid_at', [$this->startDate, $this->endDate])
+            ->where(function ($query) {
+                foreach ($this->selectedMonths as $month) {
+                    $query->orWhere(function ($q) use ($month) {
+                        $q->whereYear('contribution_period', $this->selectedYear)
+                          ->whereMonth('contribution_period', $month);
+                    });
+                }
+            })
+            ->orderBy('contribution_period', 'desc')
             ->orderBy('paid_at', 'desc')
             ->get()
             ->map(function ($c) {
                 return [
+                    'for_month' => $c->contribution_period ? $c->contribution_period->format('M Y') : '-',
                     'date' => $c->paid_at?->format('Y-m-d'),
                     'member' => $c->member?->full_name ?? '-',
                     'shares' => $c->shares,

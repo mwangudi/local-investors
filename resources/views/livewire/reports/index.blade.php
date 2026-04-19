@@ -40,6 +40,30 @@
                             <label class="form-label">End Date</label>
                             <input type="date" class="form-control" wire:model="endDate">
                         </div>
+                        @if($reportType === 'contributions')
+                        <div class="col-md-2">
+                            <label class="form-label">Year</label>
+                            <select class="form-select" wire:model="selectedYear">
+                                @for($y = now()->year; $y >= now()->year - 5; $y--)
+                                    <option value="{{ $y }}">{{ $y }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Select Months</label>
+                            <div class="d-flex flex-wrap gap-3">
+                                @foreach(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] as $idx => $monthName)
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" 
+                                               value="{{ $idx + 1 }}" 
+                                               wire:model="selectedMonths"
+                                               id="month_{{ $idx + 1 }}">
+                                        <label class="form-check-label" for="month_{{ $idx + 1 }}">{{ $monthName }}</label>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
                         @if($reportType === 'loans')
                         <div class="col-md-2">
                             <label class="form-label">Loan Status</label>
@@ -70,7 +94,7 @@
                     <h5 class="card-title mb-0">
                         @switch($reportType)
                             @case('members') Members Report @break
-                            @case('contributions') Contributions Report ({{ $startDate }} to {{ $endDate }}) @break
+                            @case('contributions') Contributions Report ({{ $selectedYear }} - {{ collect($selectedMonths)->sort()->map(fn($m) => \Carbon\Carbon::create()->month($m)->format('M'))->implode(', ') }}) @break
                             @case('loans') Loans Report @break
                             @case('financial_summary') Financial Summary ({{ $startDate }} to {{ $endDate }}) @break
                         @endswitch
@@ -128,7 +152,8 @@
                                 <table class="table table-hover mb-0">
                                     <thead>
                                         <tr>
-                                            <th>Date</th>
+                                            <th>For Month</th>
+                                            <th>Paid On</th>
                                             <th>Member</th>
                                             <th class="text-end">Shares</th>
                                             <th class="text-end">Welfare</th>
@@ -140,6 +165,7 @@
                                         @forelse($reportData as $row)
                                             @php $totalShares += $row['shares']; $totalWelfare += $row['welfare']; @endphp
                                             <tr>
+                                                <td>{{ $row['for_month'] }}</td>
                                                 <td>{{ $row['date'] }}</td>
                                                 <td>{{ $row['member'] }}</td>
                                                 <td class="text-end">KES {{ number_format($row['shares'], 2) }}</td>
@@ -147,13 +173,13 @@
                                                 <td class="text-end fw-bold">KES {{ number_format($row['total'], 2) }}</td>
                                             </tr>
                                         @empty
-                                            <tr><td colspan="5" class="text-center py-4 text-muted">No contributions in period</td></tr>
+                                            <tr><td colspan="6" class="text-center py-4 text-muted">No contributions in period</td></tr>
                                         @endforelse
                                     </tbody>
                                     @if(count($reportData) > 0)
                                     <tfoot class="table-light">
                                         <tr class="fw-bold">
-                                            <td colspan="2">Total</td>
+                                            <td colspan="3">Total</td>
                                             <td class="text-end">KES {{ number_format($totalShares, 2) }}</td>
                                             <td class="text-end">KES {{ number_format($totalWelfare, 2) }}</td>
                                             <td class="text-end">KES {{ number_format($totalShares + $totalWelfare, 2) }}</td>
