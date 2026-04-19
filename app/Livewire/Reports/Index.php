@@ -90,6 +90,7 @@ class Index extends Component
                     'for_month' => $c->contribution_period ? $c->contribution_period->format('M Y') : '-',
                     'date' => $c->paid_at?->format('Y-m-d'),
                     'member' => $c->member?->full_name ?? '-',
+                    'payment_method' => $c->payment_method ?? 'Unknown',
                     'shares' => $c->shares,
                     'welfare' => $c->welfare,
                     'merry_go_round' => $c->merry_go_round,

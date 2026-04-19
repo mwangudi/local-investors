@@ -150,6 +150,7 @@
                                             <th>For Month</th>
                                             <th>Paid On</th>
                                             <th>Member</th>
+                                            <th>Method</th>
                                             <th class="text-end">Shares</th>
                                             <th class="text-end">Welfare</th>
                                             <th class="text-end">Total</th>
@@ -163,18 +164,25 @@
                                                 <td>{{ $row['for_month'] }}</td>
                                                 <td>{{ $row['date'] }}</td>
                                                 <td>{{ $row['member'] }}</td>
+                                                <td>
+                                                    @php
+                                                        $methodMap = ['mpesa' => 'M-PESA', 'zimele' => 'Zimele', 'merry_go_round' => 'Merry-Go-Round', 'cash' => 'Cash', 'bank' => 'Bank Transfer'];
+                                                        $methodLabel = $methodMap[strtolower($row['payment_method'] ?? '')] ?? ucfirst($row['payment_method'] ?? 'N/A');
+                                                    @endphp
+                                                    {{ $methodLabel }}
+                                                </td>
                                                 <td class="text-end">KES {{ number_format($row['shares'], 2) }}</td>
                                                 <td class="text-end">KES {{ number_format($row['welfare'], 2) }}</td>
                                                 <td class="text-end fw-bold">KES {{ number_format($row['total'], 2) }}</td>
                                             </tr>
                                         @empty
-                                            <tr><td colspan="6" class="text-center py-4 text-muted">No contributions in period</td></tr>
+                                            <tr><td colspan="7" class="text-center py-4 text-muted">No contributions in period</td></tr>
                                         @endforelse
                                     </tbody>
                                     @if(count($reportData) > 0)
                                     <tfoot class="table-light">
                                         <tr class="fw-bold">
-                                            <td colspan="3">Total</td>
+                                            <td colspan="4">Total</td>
                                             <td class="text-end">KES {{ number_format($totalShares, 2) }}</td>
                                             <td class="text-end">KES {{ number_format($totalWelfare, 2) }}</td>
                                             <td class="text-end">KES {{ number_format($totalShares + $totalWelfare, 2) }}</td>
