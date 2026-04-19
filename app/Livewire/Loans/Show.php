@@ -156,7 +156,7 @@ class Show extends Component
     public function recordRepayment()
     {
         $this->validate([
-            'repaymentAmount' => 'required|numeric|min:0.01|max:' . ($this->loan->balance + 100),
+            'repaymentAmount' => 'required|numeric|min:0.01',
             'repaymentDate'   => 'required|date',
             'repaymentMethod' => 'required|string',
         ]);

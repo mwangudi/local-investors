@@ -7,6 +7,7 @@ use App\Models\Contribution;
 use App\Models\Loan;
 use App\Models\Expenditure;
 use App\Models\Income;
+use App\Services\ReportPdfService;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 use Carbon\Carbon;
@@ -17,6 +18,7 @@ class Index extends Component
     public $reportType = 'members';
     public $startDate;
     public $endDate;
+    public $loanStatus = '';
     
     // Report data
     public $reportData = [];
@@ -88,6 +90,9 @@ class Index extends Component
         return Loan::with('member')
             ->when($this->startDate && $this->endDate, function ($q) {
                 $q->whereBetween('created_at', [$this->startDate, $this->endDate . ' 23:59:59']);
+            })
+            ->when($this->loanStatus, function ($q) {
+                $q->where('status', $this->loanStatus);
             })
             ->orderBy('created_at', 'desc')
             ->get()
@@ -163,6 +168,30 @@ class Index extends Component
             fclose($out);
         }, $filename, [
             'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    public function exportPdf()
+    {
+        if (! $this->reportGenerated) {
+            $this->generateReport();
+        }
+
+        $service  = new ReportPdfService();
+        $pdfData  = $service->generate(
+            $this->reportType,
+            $this->reportData,
+            $this->startDate,
+            $this->endDate,
+            $this->loanStatus
+        );
+
+        $filename = $this->reportType . '-' . now()->format('YmdHis') . '.pdf';
+
+        return response()->streamDownload(function () use ($pdfData) {
+            echo $pdfData;
+        }, $filename, [
+            'Content-Type' => 'application/pdf',
         ]);
     }
 

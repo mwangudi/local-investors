@@ -65,7 +65,7 @@
                         <div class="d-flex align-items-center gap-2">
                             <select class="form-select form-select-sm" style="width: auto;" wire:model.live="filterMethod">
                                 <option value="">All Methods</option>
-                                <option value="mpesa">M-Pesa</option>
+                                <option value="mpesa">M-PESA</option>
                                 <option value="zimele">Zimele</option>
                                 <option value="merry_go_round">Merry-Go-Round</option>
                             </select>
@@ -135,7 +135,7 @@
                                         <td>
                                             @php
                                                 $methodBadge = match($contribution->payment_method) {
-                                                    'mpesa' => ['success', 'M-Pesa'],
+                                                    'mpesa' => ['success', 'M-PESA'],
                                                     'zimele' => ['primary', 'Zimele'],
                                                     'merry_go_round' => ['warning', 'Merry-Go-Round'],
                                                     default => ['secondary', ucfirst($contribution->payment_method ?? 'N/A')],

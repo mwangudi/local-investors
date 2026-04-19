@@ -85,13 +85,14 @@
                 </li>
 
                 <!-- Financial -->
-                <li class="nxl-item nxl-hasmenu {{ request()->routeIs('incomes.*') || request()->routeIs('expenditures.*') || request()->routeIs('withdrawals.*') || request()->routeIs('cash-returns.*') ? 'active nxl-opened' : '' }}">
+                <li class="nxl-item nxl-hasmenu {{ request()->routeIs('incomes.*') || request()->routeIs('expenditures.*') || request()->routeIs('withdrawals.*') || request()->routeIs('cash-returns.*') || request()->routeIs('projects.*') ? 'active nxl-opened' : '' }}">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-pie-chart"></i></span>
                         <span class="nxl-mtext">Financial</span>
                         <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
                     </a>
-                    <ul class="nxl-submenu" {!! request()->routeIs('incomes.*') || request()->routeIs('expenditures.*') || request()->routeIs('withdrawals.*') || request()->routeIs('cash-returns.*') ? 'style="display: block;"' : '' !!}>
+                    <ul class="nxl-submenu" {!! request()->routeIs('incomes.*') || request()->routeIs('expenditures.*') || request()->routeIs('withdrawals.*') || request()->routeIs('cash-returns.*') || request()->routeIs('projects.*') ? 'style="display: block;"' : '' !!}>
+                        <li class="nxl-item {{ request()->routeIs('projects.*') ? 'active' : '' }}"><a class="nxl-link {{ request()->routeIs('projects.*') ? 'active' : '' }}" href="{{ route('projects.index') }}"><i class="fa fa-circle me-2" style="font-size:7px; vertical-align:middle;"></i>Projects</a></li>
                         <li class="nxl-item {{ request()->routeIs('incomes.*') ? 'active' : '' }}"><a class="nxl-link {{ request()->routeIs('incomes.*') ? 'active' : '' }}" href="{{ route('incomes.index') }}"><i class="fa fa-circle me-2" style="font-size:7px; vertical-align:middle;"></i>Incomes</a></li>
                         <li class="nxl-item {{ request()->routeIs('expenditures.*') ? 'active' : '' }}"><a class="nxl-link {{ request()->routeIs('expenditures.*') ? 'active' : '' }}" href="{{ route('expenditures.index') }}"><i class="fa fa-circle me-2" style="font-size:7px; vertical-align:middle;"></i>Expenditures</a></li>
                         <li class="nxl-item {{ request()->routeIs('withdrawals.*') ? 'active' : '' }}"><a class="nxl-link {{ request()->routeIs('withdrawals.*') ? 'active' : '' }}" href="{{ route('withdrawals.index') }}"><i class="fa fa-circle me-2" style="font-size:7px; vertical-align:middle;"></i>Withdrawals</a></li>
@@ -127,14 +128,6 @@
                     </a>
                 </li>
                 @endrole
-
-                <!-- Projects -->
-                <li class="nxl-item {{ request()->routeIs('projects.*') ? 'active' : '' }}">
-                    <a href="{{ route('projects.index') }}" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-folder"></i></span>
-                        <span class="nxl-mtext">Projects</span>
-                    </a>
-                </li>
 
                 <!-- Settings -->
                 @role('admin')

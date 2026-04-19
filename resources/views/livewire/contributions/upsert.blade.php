@@ -73,7 +73,7 @@
                                 <label for="payment_method" class="form-label">Payment Method <span class="text-danger">*</span></label>
                                 <select class="form-select @error('payment_method') is-invalid @enderror" 
                                         id="payment_method" wire:model="payment_method">
-                                    <option value="mpesa">M-Pesa (to Treasurer)</option>
+                                    <option value="mpesa">M-PESA (to Treasurer)</option>
                                     <option value="zimele">Zimele (Direct Deposit)</option>
                                     <option value="merry_go_round">Merry-Go-Round</option>
                                 </select>

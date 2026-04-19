@@ -20,23 +20,38 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-3 align-items-end">
-                        <div class="col-md-3">
+                        <div class="col-md-3" wire:ignore>
                             <label class="form-label">Report Type</label>
-                            <select class="form-select select2" data-placeholder="Select report type" wire:model.live="reportType">
-                                <option value="members">Members Report</option>
-                                <option value="contributions">Contributions Report</option>
-                                <option value="loans">Loans Report</option>
-                                <option value="financial_summary">Financial Summary</option>
+                            <select class="form-select select2" 
+                                    id="reportType"
+                                    data-placeholder="Select report type..."
+                                    onchange="@this.set('reportType', this.value)">
+                                <option value="members" {{ $reportType === 'members' ? 'selected' : '' }}>Members Report</option>
+                                <option value="contributions" {{ $reportType === 'contributions' ? 'selected' : '' }}>Contributions Report</option>
+                                <option value="loans" {{ $reportType === 'loans' ? 'selected' : '' }}>Loans Report</option>
+                                <option value="financial_summary" {{ $reportType === 'financial_summary' ? 'selected' : '' }}>Financial Summary</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">Start Date</label>
                             <input type="date" class="form-control" wire:model="startDate">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">End Date</label>
                             <input type="date" class="form-control" wire:model="endDate">
                         </div>
+                        @if($reportType === 'loans')
+                        <div class="col-md-2">
+                            <label class="form-label">Loan Status</label>
+                            <select class="form-select" wire:model="loanStatus">
+                                <option value="">All Statuses</option>
+                                <option value="applied">Applied</option>
+                                <option value="approved">Approved</option>
+                                <option value="disbursed">Disbursed</option>
+                                <option value="repaid">Repaid</option>
+                            </select>
+                        </div>
+                        @endif
                         <div class="col-md-3">
                             <button wire:click="generateReport" class="btn btn-primary w-100">
                                 <i class="feather-file-text me-2"></i>Generate Report
@@ -61,11 +76,11 @@
                         @endswitch
                     </h5>
                     <div class="d-flex gap-2">
-                        <button wire:click="exportCsv" class="btn btn-sm btn-light-brand">
-                            <i class="feather-download me-1"></i>CSV
+                        <button wire:click="exportPdf" class="btn btn-sm btn-light-brand">
+                            <i class="feather-download me-1"></i>Download PDF
                         </button>
-                        <button onclick="window.print()" class="btn btn-sm btn-light-brand">
-                            <i class="feather-printer me-1"></i>Print / PDF
+                        <button wire:click="exportCsv" class="btn btn-sm btn-light-brand">
+                            <i class="feather-file me-1"></i>CSV
                         </button>
                     </div>
                 </div>

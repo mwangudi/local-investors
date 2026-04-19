@@ -44,21 +44,16 @@
         <!-- Loan Details -->
         <div class="col-lg-4">
             <div class="card stretch stretch-full">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Loan Summary</h5>
-                </div>
-                <div class="card-body">
-                    <div class="text-center mb-4">
-                         <div class="avatar-image avatar-lg bg-soft-primary text-primary d-flex align-items-center justify-content-center rounded-circle mx-auto mb-3">
+                <div class="card-header py-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="avatar-image bg-soft-primary text-primary d-flex align-items-center justify-content-center rounded-circle" style="width:32px;height:32px;font-size:12px;">
                             {{ strtoupper(substr($loan->member->first_name ?? 'U', 0, 1) . substr($loan->member->last_name ?? 'M', 0, 1)) }}
                         </div>
-                        <h5 class="mb-1">{{ $loan->member->full_name ?? 'Unknown Member' }}</h5>
-                        <p class="text-muted">{{ $loan->member->email ?? '' }}</p>
-                    </div>
-
-                    <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
-                        <span class="text-muted">Status</span>
-                         @php
+                        <div>
+                            <h6 class="mb-0 fs-13">{{ $loan->member->full_name ?? 'Unknown Member' }}</h6>
+                            <small class="text-muted">{{ $loan->member->email ?? '' }}</small>
+                        </div>
+                        @php
                             $badgeClass = match($loan->status) {
                                 'applied' => 'warning',
                                 'approved' => 'info',
@@ -68,29 +63,15 @@
                                 default => 'secondary'
                             };
                         @endphp
-                        <span class="badge bg-soft-{{ $badgeClass }} text-{{ $badgeClass }}">{{ ucfirst($loan->status) }}</span>
+                        <span class="badge bg-soft-{{ $badgeClass }} text-{{ $badgeClass }} ms-auto">{{ ucfirst($loan->status) }}</span>
                     </div>
-
-                    <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
-                        <span class="text-muted">Principal</span>
-                        <span class="fw-bold">KES {{ number_format($loan->amount, 2) }}</span>
-                    </div>
-                    <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
-                        <span class="text-muted">Interest ({{ $loan->interest_percent }}%)</span>
-                        <span class="fw-bold">KES {{ number_format(($loan->amount * $loan->interest_percent / 100), 2) }}</span>
-                    </div>
-                    <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
-                        <span class="text-muted">Total Payable</span>
-                        <span class="fw-bold text-dark">KES {{ number_format($loan->amount + ($loan->amount * $loan->interest_percent / 100), 2) }}</span>
-                    </div>
-                    <div class="mb-3 d-flex justify-content-between border-bottom pb-2">
-                        <span class="text-muted">Total Paid</span>
-                        <span class="fw-bold text-success">KES {{ number_format($loan->total_repaid, 2) }}</span>
-                    </div>
-                    <div class="mb-3 d-flex justify-content-between pb-2">
-                        <span class="text-muted">Balance Due</span>
-                        <span class="fw-bold text-danger">KES {{ number_format($loan->balance, 2) }}</span>
-                    </div>
+                </div>
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex justify-content-between border-bottom py-1"><small class="text-muted">Principal</small><small class="fw-bold">KES {{ number_format($loan->amount, 2) }}</small></div>
+                    <div class="d-flex justify-content-between border-bottom py-1"><small class="text-muted">Interest ({{ $loan->interest_percent }}%)</small><small class="fw-bold">KES {{ number_format(($loan->amount * $loan->interest_percent / 100), 2) }}</small></div>
+                    <div class="d-flex justify-content-between border-bottom py-1"><small class="text-muted">Total Payable</small><small class="fw-bold text-dark">KES {{ number_format($loan->amount + ($loan->amount * $loan->interest_percent / 100), 2) }}</small></div>
+                    <div class="d-flex justify-content-between border-bottom py-1"><small class="text-muted">Total Paid</small><small class="fw-bold text-success">KES {{ number_format($loan->total_repaid, 2) }}</small></div>
+                    <div class="d-flex justify-content-between py-1"><small class="text-muted">Balance Due</small><small class="fw-bold text-danger">KES {{ number_format($loan->balance, 2) }}</small></div>
                 </div>
             </div>
 
@@ -138,41 +119,44 @@
         <div class="col-lg-8">
             <!-- Record Repayment Form -->
             @if($loan->balance > 0 && $loan->status == 'disbursed')
-            <div class="card mb-4 stretch stretch-full">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">Record Repayment</h5>
+            <div class="card mb-3">
+                <div class="card-header py-2">
+                    <h6 class="card-title mb-0">Record Repayment</h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body py-2">
                     <form wire:submit="recordRepayment" novalidate>
-                        <div class="row g-3 align-items-end">
-                            <div class="col-md-3">
-                                <label class="form-label">Date</label>
-                                <input type="date" class="form-control" wire:model="repaymentDate">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Date</label>
+                                <input type="date" class="form-control form-control-sm" wire:model="repaymentDate">
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Amount</label>
-                                <div class="input-group">
+                                <label class="form-label small mb-1">Amount</label>
+                                <div class="input-group input-group-sm">
                                     <span class="input-group-text">KES</span>
                                     <input type="number" step="0.01" class="form-control" wire:model="repaymentAmount">
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Method</label>
-                                <select class="form-select" wire:model="repaymentMethod">
+                                <label class="form-label small mb-1">Method</label>
+                                <select class="form-select form-select-sm" wire:model="repaymentMethod">
+                                    <option value="mpesa">M-PESA (to Treasurer)</option>
                                     <option value="cash">Cash</option>
-                                    <option value="mpesa">M-Pesa</option>
-                                    <option value="bank">Bank Transfer</option>
+                                    <option value="zimele">Zimele</option>
+                                    <option value="merry_go_round">Merry-Go-Round</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
-                                <button type="submit" class="btn btn-success w-100">
-                                    <i class="feather-plus me-1"></i> Record
+                            <div class="col-md-2">
+                                <label class="form-label small mb-1">Notes</label>
+                                <input type="text" class="form-control form-control-sm" wire:model="repaymentNotes" placeholder="Optional">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-success btn-sm w-100">
+                                    <i class="feather-plus me-1"></i>Record
                                 </button>
                             </div>
-                            <div class="col-12">
-                                @error('repaymentAmount') <span class="text-danger small">{{ $message }}</span> @enderror
-                            </div>
                         </div>
+                        @error('repaymentAmount') <span class="text-danger small">{{ $message }}</span> @enderror
                     </form>
                 </div>
             </div>
@@ -188,13 +172,13 @@
                     $start    = $loan->disbursed_at ?: now();
                     $remainingPaid = (float) $loan->total_repaid;
                 @endphp
-                <div class="card mb-4 stretch stretch-full">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">Repayment Schedule ({{ $loan->term_months }} months)</h5>
+                <div class="card mb-3">
+                    <div class="card-header py-2">
+                        <h6 class="card-title mb-0">Repayment Schedule ({{ $loan->term_months }} months)</h6>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-sm mb-0">
+                            <table class="table table-sm mb-0" style="font-size: 12px;">
                                 <thead>
                                     <tr>
                                         <th>#</th>
@@ -221,7 +205,7 @@
                                                 @if($coveredByPaid)
                                                     <span class="badge bg-soft-success text-success">Paid</span>
                                                 @elseif($partial)
-                                                    <span class="badge bg-soft-warning text-warning">Partial (KES {{ number_format($paidThis, 2) }})</span>
+                                                    <span class="badge bg-soft-warning text-warning">Partial</span>
                                                 @elseif($isOverdue)
                                                     <span class="badge bg-soft-danger text-danger">Overdue</span>
                                                 @else

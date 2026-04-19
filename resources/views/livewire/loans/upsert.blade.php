@@ -32,19 +32,21 @@
                     <form wire:submit="save" novalidate>
                         <div class="row g-3">
                             <!-- Member -->
-                            <div class="col-md-6" wire:ignore>
-                                <label for="member_id" class="form-label">Member <span class="text-danger">*</span></label>
-                                <select class="form-select select2 @error('member_id') is-invalid @enderror" 
-                                        id="member_id" 
-                                        data-placeholder="Search member..."
-                                        onchange="@this.set('member_id', this.value)">
-                                    <option value="">Select Member</option>
-                                    @foreach($members as $member)
-                                        <option value="{{ $member->id }}" {{ $member_id == $member->id ? 'selected' : '' }}>{{ $member->full_name }}</option>
-                                    @endforeach
-                                </select>
+                            <div class="col-md-6">
+                                <div wire:ignore>
+                                    <label for="member_id" class="form-label">Member <span class="text-danger">*</span></label>
+                                    <select class="form-select select2" 
+                                            id="member_id" 
+                                            data-placeholder="Search member..."
+                                            onchange="@this.set('member_id', this.value)">
+                                        <option value="">Select Member</option>
+                                        @foreach($members as $member)
+                                            <option value="{{ $member->id }}" {{ $member_id == $member->id ? 'selected' : '' }}>{{ $member->full_name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                                 @error('member_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
                                 @enderror
                             </div>
 

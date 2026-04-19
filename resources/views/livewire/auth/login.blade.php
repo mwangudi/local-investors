@@ -54,11 +54,12 @@
                         </div>
                     </div>
                     
-                    <div class="mt-5">
-                        <button type="submit" class="btn btn-lg btn-primary w-100" wire:loading.attr="disabled">
+                    <div class="mt-5 d-flex gap-3">
+                        <a href="{{ route('home') }}" class="btn btn-lg btn-outline-secondary w-50">Back to Website</a>
+                        <button type="submit" class="btn btn-lg btn-primary w-50" wire:loading.attr="disabled">
                             <span wire:loading.remove>Login</span>
                             <span wire:loading>
-                                <span class="spinner-border spinner-border-sm me-2"></span>Signing in...
+                                <span class="spinner-border spinner-border-sm me-2"></span>...
                             </span>
                         </button>
                     </div>
