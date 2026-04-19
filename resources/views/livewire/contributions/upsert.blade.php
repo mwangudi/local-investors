@@ -123,9 +123,23 @@
                                 </div>
                             </div>
 
+                            <!-- Penalty Type -->
+                            <div class="col-md-3">
+                                <label for="penalty_type" class="form-label">Fine Type</label>
+                                <select class="form-select @error('penalty_type') is-invalid @enderror" 
+                                        id="penalty_type" wire:model.live="penalty_type">
+                                    <option value="">None</option>
+                                    <option value="lateness">Lateness (KES 100)</option>
+                                    <option value="absenteeism">Absenteeism (KES 200)</option>
+                                </select>
+                                @error('penalty_type')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
                             <!-- Penalty -->
                             <div class="col-md-3">
-                                <label for="penalty" class="form-label">Penalty <span class="text-danger">*</span></label>
+                                <label for="penalty" class="form-label">Fine Amount <span class="text-danger">*</span></label>
                                 <div class="input-group has-validation">
                                     <span class="input-group-text">KES</span>
                                     <input type="number" step="0.01" class="form-control @error('penalty') is-invalid @enderror" 
@@ -135,18 +149,6 @@
                                     @enderror
                                 </div>
                             </div>
-
-                            <!-- Penalty Type -->
-                            @if($penalty > 0)
-                            <div class="col-md-6">
-                                <label for="penalty_type" class="form-label">Penalty Type</label>
-                                <input type="text" class="form-control @error('penalty_type') is-invalid @enderror" 
-                                       id="penalty_type" wire:model="penalty_type" placeholder="Reason for penalty">
-                                @error('penalty_type')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            @endif
 
                             <!-- Notes -->
                             <div class="col-12">

@@ -3,6 +3,7 @@
 namespace App\Livewire\Contributions;
 
 use App\Models\Contribution;
+use App\Models\Income;
 use App\Models\Member;
 use App\Notifications\InAppNotification;
 use App\Services\NotifyService;
@@ -75,6 +76,14 @@ class Upsert extends Component
     public function updated(string $propertyName): void
     {
         $this->resetErrorBag($propertyName);
+
+        if ($propertyName === 'penalty_type') {
+            $this->penalty = match ($this->penalty_type) {
+                'lateness' => 100,
+                'absenteeism' => 200,
+                default => 0,
+            };
+        }
     }
 
     public function save(): void
@@ -87,9 +96,48 @@ class Upsert extends Component
         }
 
         if ($this->contribution) {
+            // On edit, check no other contribution exists for this member+month (excluding current)
+            $duplicate = Contribution::where('member_id', $validated['member_id'])
+                ->where('contribution_period', $validated['contribution_period'])
+                ->where('id', '!=', $this->contribution->id)
+                ->exists();
+
+            if ($duplicate) {
+                $this->addError('contribution_period', 'This member already has a contribution for this month.');
+                return;
+            }
+
             $this->contribution->update($validated);
+
+            // Sync fine record: remove old one and create new if penalty > 0
+            Income::where('category', 'fine')
+                ->where('member_id', $this->contribution->member_id)
+                ->where('description', 'like', 'Contribution #' . $this->contribution->id . '%')
+                ->delete();
+
+            if ((float) $validated['penalty'] > 0) {
+                Income::create([
+                    'amount'      => $validated['penalty'],
+                    'received_at' => $validated['paid_at'],
+                    'category'    => 'fine',
+                    'fine_type'   => $validated['penalty_type'] ?? null,
+                    'member_id'   => $validated['member_id'],
+                    'description' => 'Contribution #' . $this->contribution->id . ' – ' . ucfirst($validated['penalty_type'] ?? 'fine'),
+                ]);
+            }
+
             session()->flash('success', 'Contribution updated successfully.');
         } else {
+            // Block duplicate: one contribution per member per month
+            $duplicate = Contribution::where('member_id', $validated['member_id'])
+                ->where('contribution_period', $validated['contribution_period'])
+                ->exists();
+
+            if ($duplicate) {
+                $this->addError('contribution_period', 'This member already has a contribution for this month. Edit the existing one instead.');
+                return;
+            }
+
             $contribution = Contribution::create($validated);
 
             $total = (float) $contribution->shares
@@ -107,6 +155,15 @@ class Upsert extends Component
             ));
 
             if ((float) $contribution->penalty > 0) {
+                Income::create([
+                    'amount'      => $contribution->penalty,
+                    'received_at' => $contribution->paid_at,
+                    'category'    => 'fine',
+                    'fine_type'   => $contribution->penalty_type ?? null,
+                    'member_id'   => $contribution->member_id,
+                    'description' => 'Contribution #' . $contribution->id . ' – ' . ucfirst($contribution->penalty_type ?? 'fine'),
+                ]);
+
                 NotifyService::toMember($contribution->member_id, new InAppNotification(
                     type:    'fine.issued',
                     title:   'Fine issued',
