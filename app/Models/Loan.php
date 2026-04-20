@@ -78,6 +78,10 @@ class Loan extends Model
     }
     public function getBalanceAttribute()
     {
+        if ($this->status === 'repaid') {
+            return 0;
+        }
+
         $principal = $this->amount;
         $interest = ($this->interest_percent / 100) * $principal;
         $totalDue = $principal + $interest;

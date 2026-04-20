@@ -27,6 +27,11 @@
                         <span>Disburse Loan</span>
                     </button>
                 @endif
+                @if($loan->status == 'disbursed')
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#markRepaidModal">
+                        <i class="feather-award me-2"></i><span>Mark as Repaid</span>
+                    </button>
+                @endif
                 <a href="{{ route('loans.edit', $loan) }}" class="btn btn-light-brand">
                     <i class="feather-edit me-2"></i>
                     <span>Edit</span>
@@ -300,6 +305,39 @@
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-danger" wire:click="reject" data-bs-dismiss="modal">
                         <i class="feather-x me-1"></i> Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mark as Repaid Modal -->
+    <div class="modal fade" id="markRepaidModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Mark Loan #{{ $loan->id }} as Repaid</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">This will mark the loan as fully repaid without creating repayment records.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Repaid Amount (KES)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">KES</span>
+                            <input type="number" step="0.01" class="form-control" wire:model="markRepaidAmount">
+                        </div>
+                        @error('markRepaidAmount') <span class="text-danger small">{{ $message }}</span> @enderror
+                    </div>
+                    <div class="d-flex justify-content-between text-muted small">
+                        <span>Principal: KES {{ number_format($loan->amount, 2) }}</span>
+                        <span>Balance: KES {{ number_format($loan->balance, 2) }}</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" wire:click="markAsRepaid" data-bs-dismiss="modal">
+                        <i class="feather-check me-1"></i> Mark as Repaid
                     </button>
                 </div>
             </div>
