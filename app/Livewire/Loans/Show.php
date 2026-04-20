@@ -25,11 +25,15 @@ class Show extends Component
     // Approval / rejection remark
     public $approvalRemark = '';
 
+    // Mark as repaid
+    public $markRepaidAmount = 0;
+
     public function mount(Loan $loan)
     {
         $this->loan = $loan;
         $this->repaymentDate = date('Y-m-d');
-        $this->repaymentAmount = $loan->balance; // Default to full balance
+        $this->repaymentAmount = $loan->balance;
+        $this->markRepaidAmount = $loan->balance;
     }
 
     public function approve()
@@ -171,7 +175,11 @@ class Show extends Component
         $this->loan->refresh();
         $fullyRepaid = $this->loan->balance <= 0;
         if ($fullyRepaid) {
-            $this->loan->update(['status' => 'repaid', 'repaid' => true]);
+            $this->loan->update([
+                'status' => 'repaid',
+                'repaid' => true,
+                'repaid_amount' => $this->loan->total_repaid,
+            ]);
             $this->loan->refresh();
         }
 
@@ -199,6 +207,37 @@ class Show extends Component
              $this->loan->update(['status' => 'disbursed', 'repaid' => false]);
         }
         session()->flash('success', 'Repayment deleted.');
+    }
+
+    public function markAsRepaid()
+    {
+        $this->validate([
+            'markRepaidAmount' => 'required|numeric|min:0.01',
+        ]);
+
+        if (!in_array($this->loan->status, ['disbursed'])) {
+            session()->flash('error', 'Only disbursed loans can be marked as repaid.');
+            return;
+        }
+
+        $this->loan->update([
+            'status'        => 'repaid',
+            'repaid'        => true,
+            'repaid_amount' => $this->markRepaidAmount,
+        ]);
+
+        $this->loan->refresh();
+
+        NotifyService::toMember($this->loan->member_id, new InAppNotification(
+            type:    'loan.fully_repaid',
+            title:   'Loan cleared',
+            message: 'Your loan of KES ' . number_format($this->loan->amount, 2) . ' has been marked as repaid.',
+            url:     route('loans.show', $this->loan),
+            icon:    'feather-award',
+            color:   'success',
+        ));
+
+        session()->flash('success', 'Loan marked as repaid successfully.');
     }
 
     public function render()
