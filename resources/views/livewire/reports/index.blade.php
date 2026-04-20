@@ -301,15 +301,26 @@
     </div>
 
     <script>
+        function initMonthsSelect2() {
+            var $el = $('#selectedMonths');
+            if ($el.length && !$el.data('select2')) {
+                $el.select2({
+                    placeholder: 'Select months...',
+                    closeOnSelect: false,
+                    width: '100%'
+                }).on('change', function () {
+                    var values = $(this).val() || [];
+                    @this.set('selectedMonths', values.map(Number));
+                });
+            }
+        }
+
         document.addEventListener('livewire:initialized', function () {
-            $('#selectedMonths').select2({
-                placeholder: 'Select months...',
-                closeOnSelect: false,
-                width: '100%'
-            }).on('change', function () {
-                var values = $(this).val() || [];
-                @this.set('selectedMonths', values.map(Number));
-            });
+            initMonthsSelect2();
+        });
+
+        Livewire.hook('morph.updated', () => {
+            setTimeout(initMonthsSelect2, 50);
         });
     </script>
 </div>
