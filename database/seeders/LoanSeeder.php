@@ -34,30 +34,14 @@ class LoanSeeder extends Seeder
 
         // ── Actual loan records ──────────────────────────────────
         $loans = [
-            // Scholastica Muswii — small loan, ongoing
+            // Scholastica Muswii — 30K loan, partial repayment
             [
                 'member'   => 'Scolastica',
-                'amount'   => 2000,
-                'interest' => 10,
-                'repaid'   => false,
-                'repayments' => [],
-            ],
-            // Susan Muswii — 20K loan, not yet repaid
-            [
-                'member'   => 'Susan',
-                'amount'   => 20000,
-                'interest' => 10,
-                'repaid'   => false,
-                'repayments' => [],
-            ],
-            // Abigail Njoki — 20K loan, not yet repaid
-            [
-                'member'   => 'Abigail',
-                'amount'   => 20000,
+                'amount'   => 30000,
                 'interest' => 10,
                 'repaid'   => false,
                 'repayments' => [
-                    ['amount' => 15000, 'paid_at' => '2026-02-08', 'method' => 'merry_go_round', 'notes' => 'Repayment from Feb merry-go-round payout'],
+                    ['amount' => 10000, 'paid_at' => '2026-04-28', 'method' => 'mpesa', 'notes' => 'Loan repayment via M-Pesa'],
                 ],
             ],
             // Scholastica Muswii — 20K loan, fully repaid
@@ -71,21 +55,26 @@ class LoanSeeder extends Seeder
                     ['amount' => 10000, 'paid_at' => '2026-03-20', 'method' => 'mpesa', 'notes' => 'Final repayment (principal + interest)'],
                 ],
             ],
-            // Stella Mutheu — 10K loan, not yet repaid
-            [
-                'member'   => 'Stella',
-                'amount'   => 10000,
-                'interest' => 10,
-                'repaid'   => false,
-                'repayments' => [],
-            ],
-            // Joseph Sifuna — 31,500 loan, not yet repaid
+            // Stella Mutheu — 10K loan, fully repaid (cleared April 2026 — excluded from active loans list)
+            // [
+            //     'member'   => 'Stella',
+            //     'amount'   => 10000,
+            //     'interest' => 10,
+            //     'repaid'   => true,
+            //     'repayments' => [
+            //         ['amount' => 10500, 'paid_at' => '2026-04-28', 'method' => 'mpesa', 'notes' => 'Loan repayment via M-Pesa'],
+            //         ['amount' => 500,   'paid_at' => '2026-04-29', 'method' => 'mpesa', 'notes' => 'Final repayment – clears principal + interest'],
+            //     ],
+            // ],
+            // Joseph Sifuna — 31,500 loan, partial repayment
             [
                 'member'   => 'Sifuna',
                 'amount'   => 31500,
                 'interest' => 10,
                 'repaid'   => false,
-                'repayments' => [],
+                'repayments' => [
+                    ['amount' => 21400, 'paid_at' => '2026-04-29', 'method' => 'mpesa', 'notes' => 'Loan repayment via M-Pesa Airtel Interops (Lipa Na M-PESA)'],
+                ],
             ],
             // Joseph Sifuna — 35K loan, fully repaid
             [
@@ -98,29 +87,26 @@ class LoanSeeder extends Seeder
                     ['amount' => 18500, 'paid_at' => '2026-03-25', 'method' => 'mpesa', 'notes' => 'Final repayment (principal + interest)'],
                 ],
             ],
-            // Naomi Mutuamwari — 30K loan, not yet repaid
+            // Naomi Mutuamwari — 30K loan, partial repayment
             [
                 'member'   => 'Naomi',
                 'amount'   => 30000,
                 'interest' => 10,
                 'repaid'   => false,
-                'repayments' => [],
+                'repayments' => [
+                    ['amount' => 9500, 'paid_at' => '2026-04-29', 'method' => 'mpesa', 'notes' => 'Loan repayment via M-Pesa (April)'],
+                ],
             ],
-            // Torry Mabale — 20K loan, not yet repaid
-            [
-                'member'   => 'Torry',
-                'amount'   => 20000,
-                'interest' => 10,
-                'repaid'   => false,
-                'repayments' => [],
-            ],
-            // Michael Wangudi — 30K loan, not yet repaid
+            // Michael Wangudi — 30K loan, principal cleared in April; interest (KES 3,000) outstanding
             [
                 'member'   => 'Michael',
                 'amount'   => 30000,
                 'interest' => 10,
                 'repaid'   => false,
-                'repayments' => [],
+                'repayments' => [
+                    ['amount' => 15000, 'paid_at' => '2026-04-28', 'method' => 'mpesa',          'notes' => 'Loan deposit via M-Pesa (forwarded together with KES 15,890 collections from April contributions)'],
+                    ['amount' => 15000, 'paid_at' => '2026-04-28', 'method' => 'merry_go_round', 'notes' => 'Loan repayment from April merry-go-round payout (clears principal; interest balance KES 3,000)'],
+                ],
             ],
         ];
 

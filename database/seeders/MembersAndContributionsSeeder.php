@@ -25,10 +25,12 @@ class MembersAndContributionsSeeder extends Seeder
      */
     public function run(): void
     {
-        // ── Members (16 total — 15 original + Susan) ─────────────
+        // Wipe existing contributions (loans are NOT affected)
+        Contribution::query()->forceDelete();
+
+        // ── Members (15 total) ─────────────────────────────────
         $members = [
             ['first_name' => 'Michael',     'last_name' => 'Wangudi',      'phone' => null, 'email' => null],
-            ['first_name' => 'Ngina',       'last_name' => 'Muswii',       'phone' => null, 'email' => null],
             ['first_name' => 'Violet',      'last_name' => 'Kamadi',       'phone' => null, 'email' => null],
             ['first_name' => 'Joseph',      'last_name' => 'Sifuna',       'phone' => null, 'email' => null],
             ['first_name' => 'Tracy',       'last_name' => 'Muendi',       'phone' => null, 'email' => null],
@@ -40,22 +42,30 @@ class MembersAndContributionsSeeder extends Seeder
             ['first_name' => 'Charles',     'last_name' => 'Kingori',      'phone' => null, 'email' => null],
             ['first_name' => 'Stella',      'last_name' => 'Mutheu',       'phone' => null, 'email' => null],
             ['first_name' => 'Scolastica',  'last_name' => 'Muswii',       'phone' => null, 'email' => null],
-            ['first_name' => 'Naomi',       'last_name' => 'Mutuamwari',   'phone' => null, 'email' => null],
+            ['first_name' => 'Naomi',       'last_name' => 'Nyoroka',      'phone' => null, 'email' => null],
             ['first_name' => 'Kavinya',     'last_name' => 'Oduor',        'phone' => null, 'email' => null],
-            ['first_name' => 'Susan',       'last_name' => 'Muswii',       'phone' => null, 'email' => null],
+            ['first_name' => 'Susan Ngina', 'last_name' => 'Muswii',       'phone' => null, 'email' => null],
         ];
+
+        // Members who joined Jan 2024
+        $jan2024Members = ['Tracy Muendi'];
+
+        // Members (16 total → 15 after merging Ngina into Susan Ngina)
 
         $memberMap = [];
         foreach ($members as $m) {
+            $fullName = $m['first_name'] . ' ' . $m['last_name'];
+            $joinDate = in_array($fullName, $jan2024Members) ? '2024-01-01' : '2025-01-01';
+
             $member = Member::firstOrCreate(
                 ['first_name' => $m['first_name'], 'last_name' => $m['last_name']],
                 array_merge($m, [
-                    'join_date'  => '2025-01-01',
+                    'join_date'  => $joinDate,
                     'is_active'  => true,
                     'notification_preference' => 'both',
                 ])
             );
-            $memberMap[$m['first_name'] . ' ' . $m['last_name']] = $member->id;
+            $memberMap[$fullName] = $member->id;
         }
 
         // Helper: resolve member ID by partial name match
@@ -105,6 +115,18 @@ class MembersAndContributionsSeeder extends Seeder
             'jan' => '2026-01-11',
             'feb' => '2026-02-08',
             'mar' => '2026-03-22', // 3rd-week exception (moved from March 8)
+        ];
+
+        // Contribution period = first day of the month
+        $periods = [
+            'aug' => '2025-08-01',
+            'sep' => '2025-09-01',
+            'oct' => '2025-10-01',
+            'nov' => '2025-11-01',
+            'dec' => '2025-12-01',
+            'jan' => '2026-01-01',
+            'feb' => '2026-02-01',
+            'mar' => '2026-03-01',
         ];
 
         // ── Historical contributions: Aug 2025 – Jan 2026 ────────
@@ -179,6 +201,7 @@ class MembersAndContributionsSeeder extends Seeder
 
         foreach ($historical as $month => $contributions) {
             $date = $meetingDates[$month];
+            $period = $periods[$month];
             foreach ($contributions as $c) {
                 $b = $breakdown($c['total']);
                 $extra = $c['total'] - 3500;
@@ -191,11 +214,13 @@ class MembersAndContributionsSeeder extends Seeder
                 }
 
                 Contribution::firstOrCreate([
-                    'member_id' => $id($c['member']),
-                    'paid_at'   => $date,
+                    'member_id'           => $id($c['member']),
+                    'contribution_period' => $period,
                 ], array_merge($b, [
+                    'paid_at'        => $date,
                     'penalty'        => 0,
                     'penalty_type'   => null,
+                    'type'           => 'monthly',
                     'payment_method' => 'mpesa',
                     'notes'          => $notes,
                 ]));
@@ -209,7 +234,7 @@ class MembersAndContributionsSeeder extends Seeder
             ['member' => 'Symon Peter',   'total' => 3500, 'method' => 'mpesa'],
             ['member' => 'Scolastica',    'total' => 3500, 'method' => 'mpesa'],
             ['member' => 'Violet',        'total' => 3530, 'method' => 'mpesa'],
-            ['member' => 'Ngina Muswii',  'total' => 3530, 'method' => 'mpesa'],
+            ['member' => 'Susan Ngina',   'total' => 3530, 'method' => 'mpesa'],
             ['member' => 'Abigail',       'total' => 3500, 'method' => 'mpesa'],
             ['member' => 'Naomi',         'total' => 5000, 'method' => 'mpesa'],
             ['member' => 'Kavinya',       'total' => 3700, 'method' => 'mpesa'],
@@ -246,11 +271,13 @@ class MembersAndContributionsSeeder extends Seeder
             $b = $breakdown($actualTotal);
 
             Contribution::firstOrCreate([
-                'member_id' => $id($c['member']),
-                'paid_at'   => $febDate,
+                'member_id'           => $id($c['member']),
+                'contribution_period' => $periods['feb'],
             ], array_merge($b, [
+                'paid_at'        => $febDate,
                 'penalty'        => $penalty,
                 'penalty_type'   => $penaltyType,
+                'type'           => 'monthly',
                 'payment_method' => $c['method'],
                 'notes'          => $notes,
             ]));
@@ -260,7 +287,7 @@ class MembersAndContributionsSeeder extends Seeder
         $marDate = $meetingDates['mar'];
         $marContributions = [
             // MPESA
-            ['member' => 'Ngina Muswii',  'total' => 3500, 'method' => 'mpesa'],
+            ['member' => 'Susan Ngina',   'total' => 3500, 'method' => 'mpesa'],
             ['member' => 'Violet',        'total' => 3500, 'method' => 'mpesa'],
             ['member' => 'Michael',       'total' => 3700, 'method' => 'mpesa'],
             // Zimele
@@ -299,22 +326,35 @@ class MembersAndContributionsSeeder extends Seeder
             $b = $breakdown($actualTotal);
 
             Contribution::firstOrCreate([
-                'member_id' => $id($c['member']),
-                'paid_at'   => $marDate,
+                'member_id'           => $id($c['member']),
+                'contribution_period' => $periods['mar'],
             ], array_merge($b, [
+                'paid_at'        => $marDate,
                 'penalty'        => $penalty,
                 'penalty_type'   => $penaltyType,
+                'type'           => 'monthly',
                 'payment_method' => $c['method'],
                 'notes'          => $notes,
             ]));
         }
 
-        // ── April 2026 Contributions (early payments before meeting) ─
+        // ── April 2026 Contributions (from contributions report) ──
         $aprContributions = [
-            ['member' => 'Mike C',      'total' => 3500, 'method' => 'mpesa',  'paid_at' => '2026-04-03'],
-            ['member' => 'Catherine',   'total' => 4000, 'method' => 'mpesa',  'paid_at' => '2026-04-05'],
-            ['member' => 'Torry',       'total' => 6500, 'method' => 'mpesa',  'paid_at' => '2026-04-11'],
-            ['member' => 'Abigail',     'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-18'],
+            ['member' => 'Stella',        'total' => 3500, 'method' => 'zimele',  'paid_at' => '2026-04-19'],
+            ['member' => 'Tracy',         'total' => 3500, 'method' => 'mgr',     'paid_at' => '2026-04-19'],
+            ['member' => 'Sifuna',        'total' => 3500, 'method' => 'zimele',  'paid_at' => '2026-04-19'],
+            ['member' => 'Scolastica',    'total' => 3500, 'method' => 'mpesa',   'paid_at' => '2026-04-19'],
+            ['member' => 'Susan',         'total' => 3500, 'method' => 'mpesa',   'paid_at' => '2026-04-19'],
+            ['member' => 'Naomi',         'total' => 3500, 'method' => 'mpesa',   'paid_at' => '2026-04-19'],
+            ['member' => 'Michael',       'total' => 3500, 'method' => 'mpesa',   'paid_at' => '2026-04-19'],
+            ['member' => 'Kavinya',       'total' => 3500, 'method' => 'mpesa',   'paid_at' => '2026-04-19'],
+            ['member' => 'Charles',       'total' => 3500, 'method' => 'mpesa',   'paid_at' => '2026-04-19'],
+            ['member' => 'Abigail',       'total' => 3500, 'method' => 'zimele',  'paid_at' => '2026-04-18'],
+            ['member' => 'Symon Peter',   'total' => 3500, 'method' => 'zimele',  'paid_at' => '2026-04-18'],
+            ['member' => 'Torry',         'total' => 6500, 'method' => 'zimele',  'paid_at' => '2026-04-11'],
+            ['member' => 'Catherine',     'total' => 4000, 'method' => 'zimele',  'paid_at' => '2026-04-05'],
+            ['member' => 'Mike C',        'total' => 3500, 'method' => 'zimele',  'paid_at' => '2026-04-03'],
+            ['member' => 'Violet',        'total' => 3500, 'method' => 'zimele',  'paid_at' => '2026-03-22'],
         ];
 
         foreach ($aprContributions as $c) {
@@ -336,11 +376,55 @@ class MembersAndContributionsSeeder extends Seeder
             $b = $breakdown($actualTotal);
 
             Contribution::firstOrCreate([
-                'member_id' => $id($c['member']),
-                'paid_at'   => $c['paid_at'],
+                'member_id'           => $id($c['member']),
+                'contribution_period' => '2026-04-01',
             ], array_merge($b, [
+                'paid_at'        => $c['paid_at'],
                 'penalty'        => $penalty,
                 'penalty_type'   => $penaltyType,
+                'type'           => 'monthly',
+                'payment_method' => $c['method'],
+                'notes'          => $notes,
+            ]));
+        }
+
+        // ── May 2026 Contributions (paid in advance via Zimele) ──
+        $mayContributions = [
+            ['member' => 'Abigail',     'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-19'],
+            ['member' => 'Charles',     'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-24'],
+            ['member' => 'Susan Ngina', 'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-27'],
+            ['member' => 'Violet',      'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-28'],
+            ['member' => 'Catherine',   'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-29'],
+            ['member' => 'Symon Peter', 'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-29'],
+            ['member' => 'Stella',      'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-29'],
+        ];
+
+        foreach ($mayContributions as $c) {
+            $actualTotal = $c['total'];
+            $extra = $actualTotal - 3500;
+            $penalty = 0;
+            $penaltyType = null;
+            $notes = 'Payment via ' . strtoupper($c['method']) . ' (paid in advance for May).';
+
+            if ($extra == 200) {
+                $penalty = 200;
+                $penaltyType = 'absenteeism';
+                $notes .= ' Includes KES 200 fine.';
+                $actualTotal -= 200;
+            } elseif ($extra > 0) {
+                $notes .= ' Extra KES ' . number_format($extra) . ' (catch-up / loan repayment).';
+            }
+
+            $b = $breakdown($actualTotal);
+
+            Contribution::firstOrCreate([
+                'member_id'           => $id($c['member']),
+                'contribution_period' => '2026-05-01',
+            ], array_merge($b, [
+                'paid_at'        => $c['paid_at'],
+                'penalty'        => $penalty,
+                'penalty_type'   => $penaltyType,
+                'type'           => 'monthly',
                 'payment_method' => $c['method'],
                 'notes'          => $notes,
             ]));
