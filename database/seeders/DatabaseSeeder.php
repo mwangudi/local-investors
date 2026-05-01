@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             ChamaSettingsSeeder::class,
             MembersAndContributionsSeeder::class,
+            OpeningBalancesSeeder::class,
+            MemberContributionsSeeder::class,
             LoanSeeder::class,
             LandProjectSeeder::class,
             NanyukiTripSeeder::class,

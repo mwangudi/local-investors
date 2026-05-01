@@ -55,11 +55,15 @@ class LoanSeeder extends Seeder
                     ['amount' => 10000, 'paid_at' => '2026-03-20', 'method' => 'mpesa', 'notes' => 'Final repayment (principal + interest)'],
                 ],
             ],
-            // Stella Mutheu — 10K loan, fully repaid (cleared April 2026 — excluded from active loans list)
+            // Stella Mutheu — 10K loan, disbursed Mar 2026 from Zimele withdrawal,
+            // fully repaid in April 2026 (cleared — excluded from active loans list)
+            // Disbursed 2026-03-22 (KES 30,000 withdrawn from Zimele on chama day).
             // [
             //     'member'   => 'Stella',
             //     'amount'   => 10000,
             //     'interest' => 10,
+            //     'disbursed_at' => '2026-03-22',
+            //     'due_at'       => '2026-06-30',
             //     'repaid'   => true,
             //     'repayments' => [
             //         ['amount' => 10500, 'paid_at' => '2026-04-28', 'method' => 'mpesa', 'notes' => 'Loan repayment via M-Pesa'],
