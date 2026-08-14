@@ -2,6 +2,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -39,6 +40,14 @@ class Loan extends Model
         return $this->belongsTo(Member::class);
     }
 
+    // SQL counterpart of is_overdue: the whole due month must have passed.
+    public function scopeOverdue(Builder $query): Builder
+    {
+        return $query->whereNotNull('due_at')
+            ->whereDate('due_at', '<', now()->startOfMonth())
+            ->where('status', '!=', self::STATUS_REPAID);
+    }
+
     public function approvals()
     {
         return $this->hasMany(LoanApproval::class);
@@ -74,6 +83,11 @@ class Loan extends Model
 
     public function getTotalRepaidAttribute()
     {
+        // Use the eager-loaded aggregate when present, so listings avoid a query per row.
+        if (array_key_exists('repayments_sum_amount', $this->attributes)) {
+            return (float) $this->attributes['repayments_sum_amount'];
+        }
+
         return $this->repayments()->sum('amount');
     }
     public function getBalanceAttribute()

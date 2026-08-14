@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Loan;
+use App\Models\LoanRepayment;
 use App\Models\Member;
 use Database\Seeders\LoanSeeder;
 use Database\Seeders\MeetingJune2026Seeder;
@@ -85,6 +86,25 @@ class LoanRecordsTest extends TestCase
         $this->travelTo('2026-09-01');
         $this->assertTrue($loan->is_overdue, 'Loan should be overdue from the month after the due date.');
         $this->assertSame(4050.0, (float) $loan->overdue_penalty);
+    }
+
+    public function test_rerunning_the_loan_seeder_does_not_duplicate_or_reopen_loans(): void
+    {
+        $this->seedLoanHistory();
+
+        $loanCount = Loan::count();
+        $repaymentCount = LoanRepayment::count();
+
+        $this->seed(LoanSeeder::class);
+
+        $this->assertSame($loanCount, Loan::count());
+        $this->assertSame($repaymentCount, LoanRepayment::count());
+
+        $closed = Loan::where('member_id', $this->member('Naomi Nyoroka')->id)
+            ->whereDate('disbursed_at', '2026-01-17')
+            ->firstOrFail();
+
+        $this->assertTrue($closed->repaid, 'Re-running the loan seeder must not reopen a closed loan.');
     }
 
     private function seedLoanHistory(): void

@@ -13,33 +13,6 @@
     <div class="page-header-right ms-auto">
         <div class="page-header-right-items">
             <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                <div class="dropdown">
-                    <a class="btn btn-icon btn-light-brand" data-bs-toggle="dropdown" data-bs-offset="0, 10" data-bs-auto-close="outside">
-                        <i class="feather-filter"></i>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end">
-                        <a href="javascript:void(0);" class="dropdown-item" wire:click="$set('statusFilter', '')">
-                            <i class="feather-eye me-3"></i>
-                            <span>All</span>
-                        </a>
-                        <a href="javascript:void(0);" class="dropdown-item" wire:click="$set('statusFilter', 'applied')">
-                            <i class="feather-file-text me-3"></i>
-                            <span>Applied</span>
-                        </a>
-                        <a href="javascript:void(0);" class="dropdown-item" wire:click="$set('statusFilter', 'approved')">
-                            <i class="feather-check-circle me-3"></i>
-                            <span>Approved</span>
-                        </a>
-                        <a href="javascript:void(0);" class="dropdown-item" wire:click="$set('statusFilter', 'disbursed')">
-                            <i class="feather-dollar-sign me-3"></i>
-                            <span>Disbursed</span>
-                        </a>
-                        <a href="javascript:void(0);" class="dropdown-item" wire:click="$set('statusFilter', 'repaid')">
-                            <i class="feather-check-square me-3"></i>
-                            <span>Repaid</span>
-                        </a>
-                    </div>
-                </div>
                 <a href="{{ route('loans.create') }}" class="btn btn-primary">
                     <i class="feather-plus me-2"></i>
                     <span>Apply Loan</span>
@@ -58,38 +31,146 @@
     <!-- [ Main Content ] start -->
     <div class="row">
         <div class="col-lg-12">
+            @if (session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+
             <div class="card stretch stretch-full">
                 <div class="card-body p-0">
-                    <!-- Search and Per Page -->
-                    <div class="p-3 d-flex justify-content-between align-items-center border-bottom">
-                        <div class="d-flex align-items-center gap-2">
-                            <span>Show</span>
+                    <!-- Filters -->
+                    <div class="p-3 border-bottom">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-xl-3 col-md-6">
+                                <label class="form-label fs-11 text-muted mb-1">Search</label>
+                                <input type="text" class="form-control form-control-sm"
+                                       wire:model.live.debounce.300ms="search" placeholder="Member name...">
+                            </div>
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label fs-11 text-muted mb-1">Member</label>
+                                <select class="form-select form-select-sm" wire:model.live="memberFilter">
+                                    <option value="">All members</option>
+                                    @foreach ($members as $member)
+                                        <option value="{{ $member->id }}">{{ $member->full_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label fs-11 text-muted mb-1">Status</label>
+                                <select class="form-select form-select-sm" wire:model.live="statusFilter">
+                                    <option value="">All statuses</option>
+                                    <option value="applied">Applied</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="disbursed">Disbursed</option>
+                                    <option value="repaid">Repaid</option>
+                                </select>
+                            </div>
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label fs-11 text-muted mb-1">Due from</label>
+                                <input type="date" class="form-control form-control-sm" wire:model.live="dueFrom">
+                            </div>
+                            <div class="col-xl-2 col-md-6">
+                                <label class="form-label fs-11 text-muted mb-1">Due to</label>
+                                <input type="date" class="form-control form-control-sm" wire:model.live="dueTo">
+                            </div>
+                            <div class="col-xl-1 col-md-6">
+                                <div class="form-check mb-1">
+                                    <input class="form-check-input" type="checkbox" id="overdueOnly"
+                                           wire:model.live="overdueOnly">
+                                    <label class="form-check-label fs-11" for="overdueOnly">Overdue</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if ($this->hasActiveFilters)
+                            <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+                                <span class="fs-11 text-muted">Filtered:</span>
+                                @if ($search)
+                                    <span class="badge bg-soft-primary text-primary">Search "{{ $search }}"</span>
+                                @endif
+                                @if ($memberFilter)
+                                    <span class="badge bg-soft-primary text-primary">{{ $members->firstWhere('id', (int) $memberFilter)?->full_name }}</span>
+                                @endif
+                                @if ($statusFilter)
+                                    <span class="badge bg-soft-primary text-primary">{{ ucfirst($statusFilter) }}</span>
+                                @endif
+                                @if ($dueFrom)
+                                    <span class="badge bg-soft-primary text-primary">Due from {{ $dueFrom }}</span>
+                                @endif
+                                @if ($dueTo)
+                                    <span class="badge bg-soft-primary text-primary">Due to {{ $dueTo }}</span>
+                                @endif
+                                @if ($overdueOnly)
+                                    <span class="badge bg-soft-danger text-danger">Overdue only</span>
+                                @endif
+                                <a href="javascript:void(0)" class="fs-11 text-danger" wire:click="clearFilters">
+                                    <i class="feather-x me-1"></i>Clear all
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Summary of the filtered set -->
+                    <div class="p-3 border-bottom d-flex flex-wrap gap-4">
+                        <div>
+                            <div class="fs-11 text-muted">Loans</div>
+                            <div class="fw-bold">{{ number_format($loans->total()) }}</div>
+                        </div>
+                        <div>
+                            <div class="fs-11 text-muted">Principal</div>
+                            <div class="fw-bold">{{ number_format($totalPrincipal, 2) }}</div>
+                        </div>
+                        <div>
+                            <div class="fs-11 text-muted">Outstanding (incl. interest)</div>
+                            <div class="fw-bold">{{ number_format($totalOutstanding, 2) }}</div>
+                        </div>
+                        <div>
+                            <div class="fs-11 text-muted">Overdue</div>
+                            <div class="fw-bold {{ $overdueCount ? 'text-danger' : '' }}">{{ number_format($overdueCount) }}</div>
+                        </div>
+                        <div class="ms-auto d-flex align-items-center gap-2">
+                            <span class="fs-11 text-muted">Show</span>
                             <select class="form-select form-select-sm" style="width: auto;" wire:model.live="perPage">
                                 <option value="10">10</option>
                                 <option value="25">25</option>
                                 <option value="50">50</option>
                                 <option value="100">100</option>
                             </select>
-                            <span>entries</span>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span>Search:</span>
-                            <input type="text" class="form-control form-control-sm" style="width: 200px;" 
-                                   wire:model.live.debounce.300ms="search" placeholder="Search member...">
                         </div>
                     </div>
-                    
+
+                    @php
+                        $sortIcon = function ($field) use ($sortField, $sortDirection) {
+                            if ($sortField !== $field) {
+                                return 'feather-more-vertical text-muted opacity-50';
+                            }
+                            return $sortDirection === 'asc' ? 'feather-arrow-up text-primary' : 'feather-arrow-down text-primary';
+                        };
+                    @endphp
 
                     <div class="table-responsive">
                         <table class="table table-hover mb-0" id="loanList">
                             <thead>
                                 <tr>
-                                    <th wire:click="sortBy('id')" style="cursor: pointer;">ID</th>
+                                    <th wire:click="sortBy('id')" style="cursor: pointer;">
+                                        ID <i class="{{ $sortIcon('id') }} fs-10"></i>
+                                    </th>
                                     <th>Member</th>
-                                    <th class="text-end" wire:click="sortBy('amount')" style="cursor: pointer;">Amount</th>
+                                    <th class="text-end" wire:click="sortBy('amount')" style="cursor: pointer;">
+                                        Amount <i class="{{ $sortIcon('amount') }} fs-10"></i>
+                                    </th>
                                     <th class="text-end">Balance</th>
-                                    <th>Status</th>
-                                    <th>Disbursed</th>
+                                    <th wire:click="sortBy('status')" style="cursor: pointer;">
+                                        Status <i class="{{ $sortIcon('status') }} fs-10"></i>
+                                    </th>
+                                    <th wire:click="sortBy('disbursed_at')" style="cursor: pointer;">
+                                        Disbursed <i class="{{ $sortIcon('disbursed_at') }} fs-10"></i>
+                                    </th>
+                                    <th wire:click="sortBy('due_at')" style="cursor: pointer;">
+                                        Due <i class="{{ $sortIcon('due_at') }} fs-10"></i>
+                                    </th>
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
@@ -127,7 +208,19 @@
                                                 {{ ucfirst($loan->status) }}
                                             </span>
                                         </td>
-                                        <td>{{ $loan->disbursed_at ? $loan->disbursed_at->format('Y-m-d') : '-' }}</td>
+                                        <td>{{ $loan->disbursed_at ? $loan->disbursed_at->format('d M Y') : '-' }}</td>
+                                        <td>
+                                            @if($loan->due_at)
+                                                <span class="{{ $loan->is_overdue ? 'text-danger fw-bold' : '' }}">
+                                                    {{ $loan->due_at->format('d M Y') }}
+                                                </span>
+                                                @if($loan->is_overdue)
+                                                    <span class="badge bg-soft-danger text-danger ms-1">Overdue</span>
+                                                @endif
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
                                         <td>
                                             <div class="hstack gap-2 justify-content-end">
                                                 <a href="{{ route('loans.show', $loan) }}" class="avatar-text avatar-md" title="View Details">
@@ -146,22 +239,35 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center text-muted py-4">
+                                        <td colspan="8" class="text-center text-muted py-4">
                                             <i class="feather-credit-card fs-1 mb-3 d-block"></i>
                                             No loans found
+                                            @if ($this->hasActiveFilters)
+                                                <div class="mt-2">
+                                                    <a href="javascript:void(0)" wire:click="clearFilters">Clear filters</a>
+                                                </div>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
-                    
+
                     <!-- Pagination -->
-                    @if($loans->hasPages())
-                        <div class="p-3 border-top">
-                            {{ $loans->links() }}
+                    <div class="p-3 border-top d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div class="fs-12 text-muted">
+                            @if ($loans->total() > 0)
+                                Showing {{ number_format($loans->firstItem()) }} to {{ number_format($loans->lastItem()) }}
+                                of {{ number_format($loans->total()) }} entries
+                            @else
+                                No entries to show
+                            @endif
                         </div>
-                    @endif
+                        @if($loans->hasPages())
+                            <div>{{ $loans->links() }}</div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

@@ -12,8 +12,11 @@ class LoanSeeder extends Seeder
     /**
      * Seed real loan data for Local Investors members.
      *
-     * All loans disbursed on 2026-01-17 with 10% interest.
-     * All loans due at end of April 2026 (2026-04-30).
+     * Defaults: disbursed 2026-01-17, due 2026-04-30, 10% interest, 2-month term;
+     * individual rows may override the dates.
+     *
+     * Idempotent: existing loans and repayments are left as they are, so later
+     * reconciliation (e.g. the June 2026 rollovers) survives a re-run.
      */
     public function run(): void
     {
@@ -144,21 +147,38 @@ class LoanSeeder extends Seeder
 
         foreach ($loans as $loanData) {
             $member = $findMember($loanData['member']);
+            $loanDisbursedAt = $loanData['disbursed_at'] ?? $disbursedAt;
 
-            $loan = Loan::create([
+            // whereDate, so an existing loan matches regardless of how the driver stores the date.
+            $loan = Loan::where('member_id', $member->id)
+                ->where('amount', $loanData['amount'])
+                ->whereDate('disbursed_at', $loanDisbursedAt)
+                ->first();
+
+            $loan ??= Loan::create([
                 'member_id'        => $member->id,
                 'amount'           => $loanData['amount'],
                 'interest_percent' => $loanData['interest'],
                 'term_months'      => 2,
-                'disbursed_at'     => $loanData['disbursed_at'] ?? $disbursedAt,
+                'disbursed_at'     => $loanDisbursedAt,
                 'due_at'           => $loanData['due_at'] ?? $dueAt,
                 'repaid'           => $loanData['repaid'],
                 'repaid_amount'    => 0,
                 'status'           => $loanData['repaid'] ? Loan::STATUS_REPAID : Loan::STATUS_DISBURSED,
             ]);
 
-            // Create repayment records
+            // Method is part of the match: one member repaid 15,000 twice on the same day.
             foreach ($loanData['repayments'] as $repayment) {
+                $alreadyRecorded = LoanRepayment::where('loan_id', $loan->id)
+                    ->where('amount', $repayment['amount'])
+                    ->where('method', $repayment['method'])
+                    ->whereDate('paid_at', $repayment['paid_at'])
+                    ->exists();
+
+                if ($alreadyRecorded) {
+                    continue;
+                }
+
                 LoanRepayment::create([
                     'loan_id' => $loan->id,
                     'amount'  => $repayment['amount'],
