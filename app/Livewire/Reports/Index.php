@@ -73,14 +73,17 @@ class Index extends Component
 
     protected function getContributionsReport()
     {
+        $months = array_filter(array_map('intval', (array) $this->selectedMonths));
+
         return Contribution::with('member')
-            ->where(function ($query) {
-                foreach ($this->selectedMonths as $month) {
-                    $query->orWhere(function ($q) use ($month) {
-                        $q->whereYear('contribution_period', $this->selectedYear)
-                          ->whereMonth('contribution_period', $month);
-                    });
-                }
+            ->whereYear('contribution_period', $this->selectedYear)
+            // No months picked means the whole year.
+            ->when($months, function ($query) use ($months) {
+                $query->where(function ($q) use ($months) {
+                    foreach ($months as $month) {
+                        $q->orWhereMonth('contribution_period', $month);
+                    }
+                });
             })
             ->orderBy('contribution_period', 'desc')
             ->orderBy('paid_at', 'desc')

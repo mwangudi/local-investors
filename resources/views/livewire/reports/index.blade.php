@@ -50,7 +50,7 @@
                             </select>
                         </div>
                         <div class="col-md-3" wire:ignore>
-                            <label class="form-label">Select Months</label>
+                            <label class="form-label">Select Months <span class="text-muted fs-11">(empty = whole year)</span></label>
                             <select class="form-select select2" 
                                     id="selectedMonths"
                                     multiple
@@ -91,7 +91,7 @@
                     <h5 class="card-title mb-0">
                         @switch($reportType)
                             @case('members') Members Report @break
-                            @case('contributions') Contributions Report ({{ $selectedYear }} - {{ collect($selectedMonths)->sort()->map(fn($m) => \Carbon\Carbon::create()->month($m)->format('M'))->implode(', ') }}) @break
+                            @case('contributions') Contributions Report ({{ $selectedYear }} - {{ empty($selectedMonths) ? 'All months' : collect($selectedMonths)->sort()->map(fn($m) => \Carbon\Carbon::create()->month($m)->format('M'))->implode(', ') }}) @break
                             @case('loans') Loans Report @break
                             @case('financial_summary') Financial Summary ({{ $startDate }} to {{ $endDate }}) @break
                         @endswitch
@@ -315,12 +315,13 @@
             }
         }
 
+        // This script runs before @livewireScripts, so Livewire is only reachable in here.
         document.addEventListener('livewire:initialized', function () {
             initMonthsSelect2();
-        });
 
-        Livewire.hook('morph.updated', () => {
-            setTimeout(initMonthsSelect2, 50);
+            Livewire.hook('morph.updated', () => {
+                setTimeout(initMonthsSelect2, 50);
+            });
         });
     </script>
 </div>
