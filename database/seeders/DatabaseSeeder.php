@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             MembersAndContributionsSeeder::class,
             OpeningBalancesSeeder::class,
             MemberContributionsSeeder::class,
+            ConfirmedSharesSeeder::class,
             LoanSeeder::class,
             LandProjectSeeder::class,
             NanyukiTripSeeder::class,

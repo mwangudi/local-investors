@@ -43,23 +43,29 @@ trait SeedsContributions
     protected function seedRows(int $memberId, array $rows): void
     {
         foreach ($rows as $row) {
-            Contribution::firstOrCreate(
-                [
-                    'member_id'           => $memberId,
-                    'contribution_period' => $row['period'],
-                ],
-                [
-                    'shares'         => $row['shares']  ?? 0,
-                    'welfare'        => $row['welfare'] ?? 0,
-                    'merry_go_round' => $row['mgr']     ?? 0,
-                    'paid_at'        => $row['paid_at'],
-                    'penalty'        => $row['penalty']      ?? 0,
-                    'penalty_type'   => $row['penalty_type'] ?? null,
-                    'type'           => $row['type']         ?? 'monthly',
-                    'payment_method' => $row['method'],
-                    'notes'          => $row['notes']        ?? null,
-                ]
-            );
+            // whereDate, so an existing row matches regardless of how the driver stores the date.
+            $exists = Contribution::query()
+                ->where('member_id', $memberId)
+                ->whereDate('contribution_period', $row['period'])
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
+
+            Contribution::create([
+                'member_id'           => $memberId,
+                'contribution_period' => $row['period'],
+                'shares'         => $row['shares']  ?? 0,
+                'welfare'        => $row['welfare'] ?? 0,
+                'merry_go_round' => $row['mgr']     ?? 0,
+                'paid_at'        => $row['paid_at'],
+                'penalty'        => $row['penalty']      ?? 0,
+                'penalty_type'   => $row['penalty_type'] ?? null,
+                'type'           => $row['type']         ?? 'monthly',
+                'payment_method' => $row['method'],
+                'notes'          => $row['notes']        ?? null,
+            ]);
         }
     }
 }

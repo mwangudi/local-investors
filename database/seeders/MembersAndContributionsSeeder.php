@@ -182,7 +182,8 @@ class MembersAndContributionsSeeder extends Seeder
             ['member' => 'Michael',       'total' => 3700, 'method' => 'mpesa'],
             ['member' => 'Stella',        'total' => 4000, 'method' => 'mpesa'],
             // Zimele
-            ['member' => 'Torry',         'total' => 7400, 'method' => 'zimele'],
+            // Torry 7,400 = 3,500 standard + 3,900 loan repayment.
+            ['member' => 'Torry',         'total' => 7400, 'method' => 'zimele', 'loan_repayment' => 3900],
             ['member' => 'Tracy',         'total' => 3700, 'method' => 'zimele'],
             ['member' => 'Mike C',        'total' => 3500, 'method' => 'zimele'],
             // Catherine: handled in consolidated block above.
@@ -191,11 +192,18 @@ class MembersAndContributionsSeeder extends Seeder
 
         foreach ($febContributions as $c) {
             $actualTotal = $c['total'];
-            $extra = $actualTotal - 3500;
             $penalty = 0;
             $penaltyType = null;
             $notes = 'Payment via ' . strtoupper($c['method']);
 
+            // Per-row override: explicit loan repayment — keep base 3,500 breakdown constant.
+            if (!empty($c['loan_repayment'])) {
+                $loanAmt = (int) $c['loan_repayment'];
+                $notes .= '. Includes KES ' . number_format($loanAmt) . ' loan repayment.';
+                $actualTotal -= $loanAmt;
+            }
+
+            $extra = $actualTotal - 3500;
             if ($extra == 100) {
                 $penalty = 100;
                 $penaltyType = 'lateness';
@@ -253,7 +261,8 @@ class MembersAndContributionsSeeder extends Seeder
             ['member' => 'Tracy',         'total' => 3500, 'method' => 'zimele'],
             ['member' => 'Symon Peter',   'total' => 3700, 'method' => 'zimele'],
             // Catherine: handled in consolidated block above.
-            ['member' => 'Torry',         'total' => 8500, 'method' => 'zimele'],
+            // Torry 8,500 = 3,500 standard + 5,000 loan repayment.
+            ['member' => 'Torry',         'total' => 8500, 'method' => 'zimele', 'loan_repayment' => 5000],
             ['member' => 'Mike C',        'total' => 3500, 'method' => 'zimele'],
             ['member' => 'Abigail',       'total' => 3500, 'method' => 'zimele'],
             ['member' => 'Charles',       'total' => 3500, 'method' => 'zimele'],
@@ -265,6 +274,13 @@ class MembersAndContributionsSeeder extends Seeder
             $penalty = 0;
             $penaltyType = null;
             $notes = 'Payment via ' . strtoupper($c['method']);
+
+            // Per-row override: explicit loan repayment — keep base 3,500 breakdown constant.
+            if (!empty($c['loan_repayment'])) {
+                $loanAmt = (int) $c['loan_repayment'];
+                $notes .= '. Includes KES ' . number_format($loanAmt) . ' loan repayment.';
+                $actualTotal -= $loanAmt;
+            }
 
             // Per-row override: explicit penalty (e.g. Sifuna 7,200 with 200 absenteeism + 3,500 catch-up).
             if (!empty($c['penalty'])) {
@@ -325,19 +341,27 @@ class MembersAndContributionsSeeder extends Seeder
             ['member' => 'Charles',       'total' => 3500, 'method' => 'mpesa',   'paid_at' => '2026-04-19'],
             ['member' => 'Abigail',       'total' => 3500, 'method' => 'zimele',  'paid_at' => '2026-04-18'],
             ['member' => 'Symon Peter',   'total' => 3500, 'method' => 'zimele',  'paid_at' => '2026-04-18'],
-            ['member' => 'Torry',         'total' => 6500, 'method' => 'zimele',  'paid_at' => '2026-04-11'],
+            // Torry 6,500 = 3,500 standard + 3,000 loan repayment.
+            ['member' => 'Torry',         'total' => 6500, 'method' => 'zimele',  'paid_at' => '2026-04-11', 'loan_repayment' => 3000],
             // Catherine: handled in consolidated block above.
             ['member' => 'Mike C',        'total' => 3500, 'method' => 'zimele',  'paid_at' => '2026-04-03'],
-            ['member' => 'Violet',        'total' => 3500, 'method' => 'zimele',  'paid_at' => '2026-03-22'],
+            ['member' => 'Violet',        'total' => 3500, 'method' => 'zimele',  'paid_at' => '2026-03-22 00:00:01'],
         ];
 
         foreach ($aprContributions as $c) {
             $actualTotal = $c['total'];
-            $extra = $actualTotal - 3500;
             $penalty = 0;
             $penaltyType = null;
             $notes = 'Payment via ' . strtoupper($c['method']);
 
+            // Per-row override: explicit loan repayment — keep base 3,500 breakdown constant.
+            if (!empty($c['loan_repayment'])) {
+                $loanAmt = (int) $c['loan_repayment'];
+                $notes .= '. Includes KES ' . number_format($loanAmt) . ' loan repayment.';
+                $actualTotal -= $loanAmt;
+            }
+
+            $extra = $actualTotal - 3500;
             if ($extra == 200) {
                 $penalty = 200;
                 $penaltyType = 'absenteeism';
@@ -362,31 +386,98 @@ class MembersAndContributionsSeeder extends Seeder
             ]));
         }
 
-        // ── May 2026 Contributions (paid in advance via Zimele) ──
+        // ── May 2026 Contributions ──
+        // Lateness fines (KES 100) charged for May; paid status varies per row.
+        // Michael's contribution: 2,500 Zimele + 1,000 reclaimed (deducted from his
+        // Land Project overpayment as treasurer) = 3,500 standard. Lateness 100 paid.
+        // Naomi: 1,700 deposit covers 100 lateness fine for April (paid late) +
+        // 1,600 partial May contribution; remaining 1,900 May contribution owed.
         $mayContributions = [
             ['member' => 'Abigail',     'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-19'],
-            ['member' => 'Charles',     'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-24'],
+            ['member' => 'Charles',     'total' => 3600, 'method' => 'zimele', 'paid_at' => '2026-04-24', 'penalty' => 100, 'penalty_type' => 'lateness'],
             ['member' => 'Susan Ngina', 'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-27'],
             ['member' => 'Violet',      'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-28'],
             // Catherine: handled in consolidated block above.
             ['member' => 'Symon Peter', 'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-29'],
             ['member' => 'Stella',      'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-04-29'],
+            ['member' => 'Mike C',      'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-05-02'],
+            // Torry 5,000 = 3,500 standard + 1,500 loan repayment. Lateness 100 unpaid.
+            ['member' => 'Torry',       'total' => 5000, 'method' => 'zimele', 'paid_at' => '2026-05-06', 'loan_repayment' => 1500, 'penalty' => 100, 'penalty_type' => 'lateness', 'penalty_paid' => false],
+            // Tracy 3,500 standard. Lateness 100 unpaid.
+            ['member' => 'Tracy',       'total' => 3500, 'method' => 'mpesa',  'paid_at' => '2026-05-07', 'penalty' => 100, 'penalty_type' => 'lateness', 'penalty_paid' => false],
+            // Kavinya 3,500 standard. Lateness 100 unpaid.
+            ['member' => 'Kavinya',     'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-05-10', 'penalty' => 100, 'penalty_type' => 'lateness', 'penalty_paid' => false],
+            // Michael 3,500 = 2,500 Zimele + 1,000 reclaimed from Land Project overpayment.
+            // Lateness 100 paid (rolled into the 2,500 deposit? Treasurer note: paid).
+            ['member' => 'Michael',     'total' => 3600, 'method' => 'zimele', 'paid_at' => '2026-05-24', 'penalty' => 100, 'penalty_type' => 'lateness',
+             'notes_override' => 'Payment via ZIMELE 2,500 + 1,000 reclaimed from Land Project overpayment (treasurer reconciliation) = 3,500 standard contribution. Includes KES 100 lateness fine.'],
+            // Sifuna 3,700 = 3,500 standard + 200 absenteeism fine. Deposited Zimele 24 May
+            // via M-Pesa 2547 ***** 425 (Joseph).
+            ['member' => 'Sifuna',      'total' => 3700, 'method' => 'zimele', 'paid_at' => '2026-05-24',
+             'notes_override' => 'Deposited to Zimele 2026-05-24 via M-Pesa 2547*****425 (Joseph). KES 3,500 standard + KES 200 absenteeism fine.'],
+            // Scolastica 3,500 standard, sent direct to treasurer via M-Pesa.
+            ['member' => 'Scolastica',  'total' => 3500, 'method' => 'mpesa',  'paid_at' => '2026-05-24',
+             'notes_override' => 'Sent direct to treasurer via M-Pesa. KES 3,500 standard contribution.'],
+            // Naomi 1,700 partial. Includes 100 lateness fine for April (previously unpaid).
+            // Remaining 1,900 May contribution still owed.
+            ['member' => 'Naomi',       'total' => 1700, 'method' => 'zimele', 'paid_at' => '2026-05-24', 'penalty' => 100, 'penalty_type' => 'lateness',
+             'notes_override' => 'Deposited to Zimele 2026-05-24 via M-Pesa 2541*****289 (Naomi). KES 100 lateness fine (April, previously unpaid) + KES 1,600 partial May contribution. KES 1,900 still owed.'],
         ];
 
         foreach ($mayContributions as $c) {
             $actualTotal = $c['total'];
-            $extra = $actualTotal - 3500;
             $penalty = 0;
             $penaltyType = null;
-            $notes = 'Payment via ' . strtoupper($c['method']) . ' (paid in advance for May).';
+            $penaltyPaid = true;
 
-            if ($extra == 200) {
-                $penalty = 200;
-                $penaltyType = 'absenteeism';
-                $notes .= ' Includes KES 200 fine.';
-                $actualTotal -= 200;
-            } elseif ($extra > 0) {
-                $notes .= ' Extra KES ' . number_format($extra) . ' (catch-up / loan repayment).';
+            if (!empty($c['notes_override'])) {
+                $notes = $c['notes_override'];
+            } else {
+                $notes = 'Payment via ' . strtoupper($c['method']) . ' (paid in advance for May).';
+            }
+
+            // Per-row override: explicit loan repayment — keep base 3,500 breakdown constant.
+            if (!empty($c['loan_repayment'])) {
+                $loanAmt = (int) $c['loan_repayment'];
+                if (empty($c['notes_override'])) {
+                    $notes .= ' Includes KES ' . number_format($loanAmt) . ' loan repayment.';
+                }
+                $actualTotal -= $loanAmt;
+            }
+
+            // Per-row override: explicit penalty (lateness 100, absenteeism 200, etc.).
+            if (!empty($c['penalty'])) {
+                $penalty = (int) $c['penalty'];
+                $penaltyType = $c['penalty_type'] ?? 'lateness';
+                $penaltyPaid = $c['penalty_paid'] ?? true;
+                if ($penaltyPaid) {
+                    // Fine paid as part of deposit — strip from contribution total.
+                    $actualTotal -= $penalty;
+                    if (empty($c['notes_override'])) {
+                        $notes .= ' Includes KES ' . number_format($penalty) . ' ' . $penaltyType . ' fine (paid).';
+                    }
+                } else {
+                    // Fine charged but NOT paid — leave contribution total intact, just record the fine.
+                    if (empty($c['notes_override'])) {
+                        $notes .= ' KES ' . number_format($penalty) . ' ' . $penaltyType . ' fine charged but NOT paid yet.';
+                    }
+                }
+            } else {
+                // Auto-detect penalty from amount overage (legacy behaviour).
+                $extra = $actualTotal - 3500;
+                if ($extra == 200) {
+                    $penalty = 200;
+                    $penaltyType = 'absenteeism';
+                    $notes .= ' Includes KES 200 fine.';
+                    $actualTotal -= 200;
+                } elseif ($extra == 100) {
+                    $penalty = 100;
+                    $penaltyType = 'lateness';
+                    $notes .= ' Includes KES 100 fine.';
+                    $actualTotal -= 100;
+                } elseif ($extra > 0) {
+                    $notes .= ' Extra KES ' . number_format($extra) . ' (catch-up / loan repayment).';
+                }
             }
 
             $b = $breakdown($actualTotal);
@@ -396,11 +487,36 @@ class MembersAndContributionsSeeder extends Seeder
                 'contribution_period' => '2026-05-01',
             ], array_merge($b, [
                 'paid_at'        => $c['paid_at'],
-                'penalty'        => $penalty,
-                'penalty_type'   => $penaltyType,
+                'penalty'        => $penaltyPaid ? $penalty : 0,
+                'penalty_type'   => $penaltyPaid ? $penaltyType : null,
                 'type'           => 'monthly',
                 'payment_method' => $c['method'],
                 'notes'          => $notes,
+            ]));
+        }
+
+        // ── June & July 2026 Contributions (paid in advance) ──
+        // Abigail 7,000 covers BOTH June and July (two-month advance).
+        $advanceContributions = [
+            ['member' => 'Charles', 'period' => '2026-06-01', 'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-05-28', 'notes' => 'Payment via ZIMELE for June.'],
+            ['member' => 'Abigail', 'period' => '2026-06-01', 'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-05-24', 'notes' => 'Payment via ZIMELE — first half of KES 7,000 advance covering June + July.'],
+            ['member' => 'Abigail', 'period' => '2026-07-01', 'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-05-24 00:00:01', 'notes' => 'Payment via ZIMELE — second half of KES 7,000 advance covering June + July.'],
+            ['member' => 'Michael', 'period' => '2026-06-01', 'total' => 3500, 'method' => 'zimele', 'paid_at' => '2026-05-30', 'notes' => 'Payment via ZIMELE for June.'],
+        ];
+
+        foreach ($advanceContributions as $c) {
+            $b = $breakdown($c['total']);
+
+            Contribution::firstOrCreate([
+                'member_id'           => $id($c['member']),
+                'contribution_period' => $c['period'],
+            ], array_merge($b, [
+                'paid_at'        => $c['paid_at'],
+                'penalty'        => 0,
+                'penalty_type'   => null,
+                'type'           => 'monthly',
+                'payment_method' => $c['method'],
+                'notes'          => $c['notes'],
             ]));
         }
     }
