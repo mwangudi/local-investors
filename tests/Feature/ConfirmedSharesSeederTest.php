@@ -57,6 +57,19 @@ class ConfirmedSharesSeederTest extends TestCase
         $this->assertPeriodShares('Catherine Masinde', '2026-01-01', 30500);
         $this->assertPeriodShares('Mike C', '2026-07-01', 12500);
 
+        $this->assertSame(
+            0,
+            Contribution::whereNull('paid_at')->count(),
+            'Contributions without a paid_at break search filters.'
+        );
+
+        $seeded = Contribution::query()
+            ->where('member_id', $this->member('Susan Ngina Muswii')->id)
+            ->whereDate('contribution_period', '2025-06-01')
+            ->firstOrFail();
+
+        $this->assertSame('2025-06-08', $seeded->paid_at->format('Y-m-d'), 'Seeded rows use the 2nd Sunday.');
+
         $registrations = [
             'Catherine Masinde' => '2025-01-12',
             'Violet Kamadi' => '2025-01-12',

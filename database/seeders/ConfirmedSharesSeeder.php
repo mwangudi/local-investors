@@ -131,14 +131,41 @@ class ConfirmedSharesSeeder extends Seeder
                         'penalty' => 0,
                         'type' => $period === '2024-12-31' ? 'opening_balance' : 'monthly',
                         'notes' => 'Shares confirmed from the members contribution book.',
-                        'paid_at' => null,
+                        'paid_at' => $this->meetingDayOf($period),
                         'payment_method' => null,
                     ]);
                 }
             }
 
+            $this->backfillMissingPaymentDates();
             $this->seedRegistrationFees();
         });
+    }
+
+    // Search filters break on a null paid_at, so every row gets the meeting day it belongs to.
+    private function backfillMissingPaymentDates(): void
+    {
+        Contribution::query()
+            ->whereNull('paid_at')
+            ->whereNotNull('contribution_period')
+            ->get()
+            ->each(function (Contribution $contribution): void {
+                $contribution->update([
+                    'paid_at' => $this->meetingDayOf($contribution->contribution_period->format('Y-m-d')),
+                ]);
+            });
+    }
+
+    // Meetings are held on the second Sunday of the month.
+    private function meetingDayOf(string $period): string
+    {
+        $firstOfMonth = new \DateTimeImmutable(substr($period, 0, 7) . '-01');
+
+        $firstSunday = $firstOfMonth->format('N') === '7'
+            ? $firstOfMonth
+            : $firstOfMonth->modify('next sunday');
+
+        return $firstSunday->modify('+7 days')->format('Y-m-d');
     }
 
     private function monthlyShares(string $startMonth, string $endMonth): array
