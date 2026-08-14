@@ -155,7 +155,7 @@
                             <thead>
                                 <tr>
                                     <th wire:click="sortBy('id')" style="cursor: pointer;">
-                                        ID <i class="{{ $sortIcon('id') }} fs-10"></i>
+                                        Reference <i class="{{ $sortIcon('id') }} fs-10"></i>
                                     </th>
                                     <th>Member</th>
                                     <th class="text-end" wire:click="sortBy('amount')" style="cursor: pointer;">
@@ -177,7 +177,7 @@
                             <tbody>
                                 @forelse($loans as $loan)
                                     <tr class="single-item">
-                                        <td>#{{ $loan->id }}</td>
+                                        <td><span class="fw-bold">{{ $loan->reference }}</span></td>
                                         <td>
                                             @if($loan->member)
                                                 <a href="{{ route('members.edit', $loan->member) }}" class="hstack gap-3">
