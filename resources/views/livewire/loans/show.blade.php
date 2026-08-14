@@ -2,7 +2,7 @@
     @section('pageHeader')
     <div class="page-header-left d-flex align-items-center">
         <div class="page-header-title">
-            <h5 class="m-b-10">Loan Details #{{ $loan->id }}</h5>
+            <h5 class="m-b-10">Loan {{ $loan->reference }}</h5>
         </div>
         <ul class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
@@ -32,6 +32,11 @@
                         <i class="feather-award me-2"></i><span>Mark as Repaid</span>
                     </button>
                 @endif
+                @if($loan->can_be_rolled_over)
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#rollOverModal">
+                        <i class="feather-refresh-cw me-2"></i><span>Roll Over Balance</span>
+                    </button>
+                @endif
                 <a href="{{ route('loans.edit', $loan) }}" class="btn btn-light-brand">
                     <i class="feather-edit me-2"></i>
                     <span>Edit</span>
@@ -48,7 +53,7 @@
     <div class="row">
         <!-- Loan Details -->
         <div class="col-lg-4">
-            <div class="card stretch stretch-full">
+            <div class="card mb-3">
                 <div class="card-header py-2">
                     <div class="d-flex align-items-center gap-2">
                         <div class="avatar-image bg-soft-primary text-primary d-flex align-items-center justify-content-center rounded-circle" style="width:32px;height:32px;font-size:12px;">
@@ -77,13 +82,45 @@
                     <div class="d-flex justify-content-between border-bottom py-1"><small class="text-muted">Total Payable</small><small class="fw-bold text-dark">KES {{ number_format($loan->amount + ($loan->amount * $loan->interest_percent / 100), 2) }}</small></div>
                     <div class="d-flex justify-content-between border-bottom py-1"><small class="text-muted">Total Paid</small><small class="fw-bold text-success">KES {{ number_format($loan->total_repaid, 2) }}</small></div>
                     <div class="d-flex justify-content-between py-1"><small class="text-muted">Balance Due</small><small class="fw-bold text-danger">KES {{ number_format($loan->balance, 2) }}</small></div>
+                    @if($loan->parentLoan)
+                        <div class="d-flex justify-content-between border-top py-1">
+                            <small class="text-muted">Rolled over from</small>
+                            <small><a href="{{ route('loans.show', $loan->parentLoan) }}">{{ $loan->parentLoan->reference }}</a></small>
+                        </div>
+                    @endif
+                    @if($loan->rolloverLoan)
+                        <div class="d-flex justify-content-between border-top py-1">
+                            <small class="text-muted">Balance re-issued as</small>
+                            <small><a href="{{ route('loans.show', $loan->rolloverLoan) }}">{{ $loan->rolloverLoan->reference }}</a></small>
+                        </div>
+                    @endif
+                    <div class="row g-2 border-top pt-2 mt-1">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Applied</small>
+                            <small class="fw-bold">{{ $loan->created_at->format('d M Y') }}</small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Disbursed</small>
+                            <small class="fw-bold">{{ $loan->disbursed_at ? $loan->disbursed_at->format('d M Y') : '-' }}</small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Due</small>
+                            <small class="fw-bold {{ $loan->is_overdue ? 'text-danger' : '' }}">
+                                {{ $loan->due_at ? $loan->due_at->format('d M Y') : '-' }}
+                            </small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Term</small>
+                            <small class="fw-bold">{{ $loan->term_months }} months</small>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             @php
                 $pct      = $required > 0 ? min(100, round($current / $required * 100)) : 0;
             @endphp
-            <div class="card">
+            <div class="card mb-3">
                 <div class="card-header"><h6 class="mb-0">Approvals ({{ $current }}/{{ $required }})</h6></div>
                 <div class="card-body">
                     <div class="progress mb-3" style="height: 6px;">
@@ -99,25 +136,6 @@
                     @endforelse
                 </div>
             </div>
-            <div class="card">
-                 <div class="card-body">
-                    <h6 class="mb-3">Dates</h6>
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <small class="text-muted d-block">Applied</small>
-                            <span class="fw-bold">{{ $loan->created_at->format('Y-m-d') }}</span>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block">Disbursed</small>
-                            <span class="fw-bold">{{ $loan->disbursed_at ? $loan->disbursed_at->format('Y-m-d') : '-' }}</span>
-                        </div>
-                        <div class="col-6">
-                            <small class="text-muted d-block">Due Date</small>
-                            <span class="fw-bold">{{ $loan->due_at ? $loan->due_at->format('Y-m-d') : '-' }}</span>
-                        </div>
-                    </div>
-                 </div>
-            </div>
         </div>
 
         <!-- Repayments -->
@@ -129,22 +147,29 @@
                     <h6 class="card-title mb-0">Record Repayment</h6>
                 </div>
                 <div class="card-body py-2">
-                    <form wire:submit="recordRepayment" novalidate>
+                    {{-- Theme control heights differ per type; pin them so the row lines up. --}}
+                    <style>
+                        .repayment-form .form-control,
+                        .repayment-form .form-select,
+                        .repayment-form .input-group-text,
+                        .repayment-form .btn { height: 46px; }
+                    </style>
+                    <form wire:submit="recordRepayment" class="repayment-form" novalidate>
                         <div class="row g-2 align-items-end">
                             <div class="col-md-2">
                                 <label class="form-label small mb-1">Date</label>
-                                <input type="date" class="form-control form-control-sm" wire:model="repaymentDate">
+                                <input type="date" class="form-control" wire:model="repaymentDate">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small mb-1">Amount</label>
-                                <div class="input-group input-group-sm">
+                                <div class="input-group">
                                     <span class="input-group-text">KES</span>
                                     <input type="number" step="0.01" class="form-control" wire:model="repaymentAmount">
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label small mb-1">Method</label>
-                                <select class="form-select form-select-sm" wire:model="repaymentMethod">
+                                <select class="form-select" wire:model="repaymentMethod">
                                     <option value="mpesa">M-PESA (to Treasurer)</option>
                                     <option value="cash">Cash</option>
                                     <option value="zimele">Zimele</option>
@@ -153,10 +178,11 @@
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label small mb-1">Notes</label>
-                                <input type="text" class="form-control form-control-sm" wire:model="repaymentNotes" placeholder="Optional">
+                                <input type="text" class="form-control" wire:model="repaymentNotes" placeholder="Optional">
                             </div>
                             <div class="col-md-2">
-                                <button type="submit" class="btn btn-success btn-sm w-100">
+                                <label class="form-label small mb-1 d-none d-md-block">&nbsp;</label>
+                                <button type="submit" class="btn btn-success w-100">
                                     <i class="feather-plus me-1"></i>Record
                                 </button>
                             </div>
@@ -174,11 +200,12 @@
                     $totalInterest  = $principal * ($loan->interest_percent / 100);
                     $totalDue       = $principal + $totalInterest;
                     $start          = $loan->disbursed_at ?: now();
-                    $dueDate        = \Carbon\Carbon::parse($start)->copy()->addMonths($loan->term_months);
+                    // The recorded due date governs; fall back to the term only when it is missing.
+                    $dueDate        = $loan->due_at ?: \Carbon\Carbon::parse($start)->copy()->addMonths($loan->term_months);
                     $totalRepaid    = (float) $loan->total_repaid;
                     $fullyPaid      = $totalRepaid >= $totalDue;
                     $partiallyPaid  = !$fullyPaid && $totalRepaid > 0;
-                    $isOverdue      = $dueDate->isPast() && !$fullyPaid;
+                    $isOverdue      = $loan->is_overdue;
                 @endphp
                 <div class="card mb-3">
                     <div class="card-header py-2">
@@ -198,7 +225,7 @@
                                 </thead>
                                 <tbody>
                                     <tr class="{{ $isOverdue ? 'table-danger' : '' }}">
-                                        <td>{{ $dueDate->format('Y-m-d') }}</td>
+                                        <td>{{ $dueDate->format('d M Y') }}</td>
                                         <td class="text-end">KES {{ number_format($principal, 2) }}</td>
                                         <td class="text-end">KES {{ number_format($totalInterest, 2) }}</td>
                                         <td class="text-end fw-bold">KES {{ number_format($totalDue, 2) }}</td>
@@ -241,7 +268,7 @@
                                 @forelse($repayments as $repayment)
                                     <tr>
                                         <td>{{ $repayment->paid_at->format('Y-m-d') }}</td>
-                                        <td>{{ ucfirst($repayment->payment_method) }}</td>
+                                        <td>{{ $repayment->method ? ucfirst($repayment->method) : '-' }}</td>
                                         <td>{{ $repayment->notes ?? '-' }}</td>
                                         <td class="text-end fw-bold">KES {{ number_format($repayment->amount, 2) }}</td>
                                         <td class="text-end">
@@ -265,12 +292,16 @@
         </div>
     </div>
 
+    {{-- The theme blurs .nxl-container while a modal is open, so modals are teleported out of it.
+         @teleport moves a single root element, hence the wrapper. --}}
+    @teleport('body')
+    <div>
     <!-- Approve Loan Modal -->
     <div class="modal fade" id="approveLoanModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Approve Loan #{{ $loan->id }}</h5>
+                    <h5 class="modal-title">Approve Loan {{ $loan->reference }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -293,7 +324,7 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Reject Loan #{{ $loan->id }}</h5>
+                    <h5 class="modal-title">Reject Loan {{ $loan->reference }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -311,12 +342,63 @@
         </div>
     </div>
 
+    <!-- Roll Over Balance Modal -->
+    <div class="modal fade" id="rollOverModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Roll Over Balance of Loan {{ $loan->reference }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">
+                        The outstanding balance will be re-issued as a new loan for
+                        {{ $loan->member->full_name ?? 'this member' }}, and this loan will be closed.
+                    </p>
+                    <div class="d-flex justify-content-between border-bottom py-1">
+                        <small class="text-muted">Total payable</small>
+                        <small class="fw-bold">KES {{ number_format($loan->total_payable, 2) }}</small>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom py-1">
+                        <small class="text-muted">Already repaid</small>
+                        <small class="fw-bold text-success">KES {{ number_format($loan->total_repaid, 2) }}</small>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom py-1 mb-3">
+                        <small class="text-muted">New loan amount</small>
+                        <small class="fw-bold text-danger">KES {{ number_format($loan->balance, 2) }}</small>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label">Disbursed on</label>
+                            <input type="date" class="form-control" wire:model="rolloverDisbursedAt">
+                            @error('rolloverDisbursedAt') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Due on</label>
+                            <input type="date" class="form-control" wire:model="rolloverDueAt">
+                            @error('rolloverDueAt') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+                    <p class="text-muted small mt-2 mb-0">
+                        Interest of {{ $loan->interest_percent }}% will apply to the new loan.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" wire:click="rollOverBalance" data-bs-dismiss="modal">
+                        <i class="feather-refresh-cw me-1"></i> Roll Over
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Mark as Repaid Modal -->
     <div class="modal fade" id="markRepaidModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Mark Loan #{{ $loan->id }} as Repaid</h5>
+                    <h5 class="modal-title">Mark Loan {{ $loan->reference }} as Repaid</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -343,4 +425,6 @@
             </div>
         </div>
     </div>
+    </div>
+    @endteleport
 </div>

@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Loan extends Model
 {
@@ -17,6 +18,8 @@ class Loan extends Model
 
     protected $fillable = [
         'member_id',
+        'parent_loan_id',
+        'reference',
         'amount',
         'interest_percent',
         'term_months',
@@ -40,12 +43,115 @@ class Loan extends Model
         return $this->belongsTo(Member::class);
     }
 
+    // Set during performInsert rather than by a model event, so seeders that mute
+    // events (WithoutModelEvents) still get a reference.
+    public $usesUniqueIds = true;
+
+    public function uniqueIds(): array
+    {
+        return ['reference'];
+    }
+
+    public function newUniqueId(): string
+    {
+        return self::generateReference();
+    }
+
+    // Loans are addressed by reference (e.g. XTR883) rather than by id.
+    public function getRouteKeyName(): string
+    {
+        return 'reference';
+    }
+
+    public static function generateReference(): string
+    {
+        do {
+            $letters = '';
+            for ($i = 0; $i < 3; $i++) {
+                $letters .= chr(random_int(65, 90));
+            }
+
+            $reference = $letters . random_int(100, 999);
+        } while (DB::table('loans')->where('reference', $reference)->exists());
+
+        return $reference;
+    }
+
     // SQL counterpart of is_overdue: the whole due month must have passed.
     public function scopeOverdue(Builder $query): Builder
     {
         return $query->whereNotNull('due_at')
             ->whereDate('due_at', '<', now()->startOfMonth())
             ->where('status', '!=', self::STATUS_REPAID);
+    }
+
+    public function parentLoan()
+    {
+        return $this->belongsTo(self::class, 'parent_loan_id');
+    }
+
+    public function rolloverLoan()
+    {
+        return $this->hasOne(self::class, 'parent_loan_id');
+    }
+
+    public function getWasRolledOverAttribute(): bool
+    {
+        return $this->rolloverLoan()->exists();
+    }
+
+    public function getCanBeRolledOverAttribute(): bool
+    {
+        return $this->status === self::STATUS_DISBURSED
+            && $this->balance > 0
+            && ! $this->was_rolled_over;
+    }
+
+    /**
+     * Re-issue this loan's outstanding balance (principal + interest less repayments)
+     * as a new loan and close this one, as done for the June 2026 rollovers.
+     *
+     * @throws \DomainException when there is nothing to roll over.
+     */
+    public function rollOverBalance(string $disbursedAt, string $dueAt): self
+    {
+        // Read the balance first: it reports 0 once the loan is closed below.
+        $balance = round((float) $this->balance, 2);
+
+        if ($this->status !== self::STATUS_DISBURSED) {
+            throw new \DomainException('Only a disbursed loan can be rolled over.');
+        }
+
+        if ($balance <= 0) {
+            throw new \DomainException('This loan has no outstanding balance to roll over.');
+        }
+
+        if ($this->was_rolled_over) {
+            throw new \DomainException('This loan has already been rolled over.');
+        }
+
+        return DB::transaction(function () use ($balance, $disbursedAt, $dueAt) {
+            $replacement = self::create([
+                'member_id'        => $this->member_id,
+                'parent_loan_id'   => $this->id,
+                'amount'           => $balance,
+                'interest_percent' => $this->interest_percent,
+                'term_months'      => $this->term_months,
+                'disbursed_at'     => $disbursedAt,
+                'due_at'           => $dueAt,
+                'repaid'           => false,
+                'repaid_amount'    => 0,
+                'status'           => self::STATUS_DISBURSED,
+            ]);
+
+            $this->update([
+                'repaid'        => true,
+                'repaid_amount' => $this->total_repaid,
+                'status'        => self::STATUS_REPAID,
+            ]);
+
+            return $replacement;
+        });
     }
 
     public function approvals()

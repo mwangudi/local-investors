@@ -8,6 +8,7 @@ use App\Models\LoanApproval;
 use App\Models\LoanRepayment;
 use App\Notifications\InAppNotification;
 use App\Services\NotifyService;
+use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\Attributes\Layout;
 
@@ -28,12 +29,61 @@ class Show extends Component
     // Mark as repaid
     public $markRepaidAmount = 0;
 
+    // Roll the outstanding balance into a new loan
+    public $rolloverDisbursedAt;
+    public $rolloverDueAt;
+
     public function mount(Loan $loan)
     {
         $this->loan = $loan;
         $this->repaymentDate = date('Y-m-d');
         $this->repaymentAmount = $loan->balance;
         $this->markRepaidAmount = $loan->balance;
+        $this->rolloverDisbursedAt = date('Y-m-d');
+        $this->rolloverDueAt = $this->defaultRolloverDueDate();
+    }
+
+    // Meetings fall on the second Sunday, so a new loan falls due on one.
+    private function defaultRolloverDueDate(): string
+    {
+        $month = now()->addMonths($this->loan->term_months ?: 2)->startOfMonth();
+
+        $firstSunday = $month->dayOfWeek === Carbon::SUNDAY
+            ? $month
+            : $month->next(Carbon::SUNDAY);
+
+        return $firstSunday->addWeek()->toDateString();
+    }
+
+    public function rollOverBalance()
+    {
+        $this->validate([
+            'rolloverDisbursedAt' => 'required|date',
+            'rolloverDueAt'       => 'required|date|after_or_equal:rolloverDisbursedAt',
+        ]);
+
+        try {
+            $replacement = $this->loan->rollOverBalance($this->rolloverDisbursedAt, $this->rolloverDueAt);
+        } catch (\DomainException $e) {
+            session()->flash('error', $e->getMessage());
+
+            return null;
+        }
+
+        NotifyService::toMember($this->loan->member_id, new InAppNotification(
+            type:    'loan.rolled_over',
+            title:   'Loan balance re-issued',
+            message: 'Your outstanding balance of KES ' . number_format((float) $replacement->amount, 2)
+                    . ' has been re-issued as a new loan due ' . $replacement->due_at->format('d M Y') . '.',
+            url:     route('loans.show', $replacement),
+            icon:    'feather-refresh-cw',
+            color:   'warning',
+        ));
+
+        session()->flash('success', 'Balance of KES ' . number_format((float) $replacement->amount, 2)
+            . ' re-issued as loan #' . $replacement->id . '.');
+
+        return redirect()->route('loans.show', $replacement);
     }
 
     public function approve()
@@ -166,10 +216,10 @@ class Show extends Component
         ]);
 
         $this->loan->repayments()->create([
-            'amount'         => $this->repaymentAmount,
-            'paid_at'        => $this->repaymentDate,
-            'payment_method' => $this->repaymentMethod,
-            'notes'          => $this->repaymentNotes,
+            'amount'  => $this->repaymentAmount,
+            'paid_at' => $this->repaymentDate,
+            'method'  => $this->repaymentMethod,
+            'notes'   => $this->repaymentNotes,
         ]);
 
         $this->loan->refresh();
