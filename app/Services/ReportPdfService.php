@@ -322,8 +322,8 @@ class ReportPdfService
             ['label' => 'Grand Total',   'value' => 'KES ' . number_format($totAll, 2)],
         ]);
 
-        $headers = ['#', 'Date', 'Member', 'Shares', 'Welfare', 'Merry-Go-Round', 'Total'];
-        $widths  = [8, 22, 42, 25, 25, 30, 30];
+        $headers = ['#', 'Month', 'Paid On', 'Member', 'Method', 'Shares', 'Welfare', 'MGR', 'Total'];
+        $widths  = [7, 18, 18, 30, 22, 18, 18, 24, 25];
 
         $this->renderTableHeader($headers, $widths);
         $this->pdf->SetFont('helvetica', '', 7.5);
@@ -337,27 +337,36 @@ class ReportPdfService
             $this->pdf->SetDrawColor(230, 220, 200);
 
             $this->pdf->Cell($widths[0], 7, $i, 'LR', 0, 'C', true);
-            $this->pdf->Cell($widths[1], 7, $row['date'], 'LR', 0, 'C', true);
-            $this->pdf->Cell($widths[2], 7, $row['member'], 'LR', 0, 'L', true);
-            $this->pdf->Cell($widths[3], 7, number_format($row['shares'], 2), 'LR', 0, 'R', true);
-            $this->pdf->Cell($widths[4], 7, number_format($row['welfare'], 2), 'LR', 0, 'R', true);
-            $this->pdf->Cell($widths[5], 7, number_format($row['merry_go_round'], 2), 'LR', 0, 'R', true);
+            $this->pdf->Cell($widths[1], 7, substr($row['for_month'], 0, 8), 'LR', 0, 'C', true);
+            $this->pdf->Cell($widths[2], 7, $row['date'], 'LR', 0, 'C', true);
 
-            $this->pdf->SetFont('helvetica', 'B', 7.5);
-            $this->pdf->Cell($widths[6], 7, number_format($row['total'], 2), 'LR', 1, 'R', true);
-            $this->pdf->SetFont('helvetica', '', 7.5);
+            // Dynamically clip member name if too long
+            $memberName = strlen($row['member']) > 15 ? substr($row['member'], 0, 15) . '.' : $row['member'];
+            $this->pdf->Cell($widths[3], 7, $memberName, 'LR', 0, 'L', true);
+
+            $methodMap = ['mpesa' => 'M-PESA', 'zimele' => 'Zimele', 'merry_go_round' => 'Mgr', 'cash' => 'Cash', 'bank' => 'Bank'];
+            $methodLabel = $methodMap[strtolower($row['payment_method'] ?? '')] ?? ucfirst($row['payment_method'] ?? 'N/A');
+            $this->pdf->Cell($widths[4], 7, $methodLabel, 'LR', 0, 'C', true);
+
+            $this->pdf->Cell($widths[5], 7, number_format($row['shares'], 2), 'LR', 0, 'R', true);
+            $this->pdf->Cell($widths[6], 7, number_format($row['welfare'], 2), 'LR', 0, 'R', true);
+            $this->pdf->Cell($widths[7], 7, number_format($row['merry_go_round'], 2), 'LR', 0, 'R', true);
+
+            $this->pdf->SetFont('helvetica', 'B', 7.2);
+            $this->pdf->Cell($widths[8], 7, number_format($row['total'], 2), 'LR', 1, 'R', true);
+            $this->pdf->SetFont('helvetica', '', 7.2);
             $i++;
         }
 
         // Totals row
-        $this->pdf->SetFont('helvetica', 'B', 7.5);
+        $this->pdf->SetFont('helvetica', 'B', 7.2);
         $this->pdf->SetFillColor(...$this->orange);
         $this->pdf->SetTextColor(...$this->white);
-        $this->pdf->Cell($widths[0] + $widths[1] + $widths[2], 7, 'TOTALS', 1, 0, 'R', true);
-        $this->pdf->Cell($widths[3], 7, number_format($totShares, 2), 1, 0, 'R', true);
-        $this->pdf->Cell($widths[4], 7, number_format($totWelfare, 2), 1, 0, 'R', true);
-        $this->pdf->Cell($widths[5], 7, number_format($totMgr, 2), 1, 0, 'R', true);
-        $this->pdf->Cell($widths[6], 7, number_format($totAll, 2), 1, 1, 'R', true);
+        $this->pdf->Cell($widths[0] + $widths[1] + $widths[2] + $widths[3] + $widths[4], 7, 'TOTALS', 1, 0, 'R', true);
+        $this->pdf->Cell($widths[5], 7, number_format($totShares, 2), 1, 0, 'R', true);
+        $this->pdf->Cell($widths[6], 7, number_format($totWelfare, 2), 1, 0, 'R', true);
+        $this->pdf->Cell($widths[7], 7, number_format($totMgr, 2), 1, 0, 'R', true);
+        $this->pdf->Cell($widths[8], 7, number_format($totAll, 2), 1, 1, 'R', true);
         $this->pdf->SetTextColor(0, 0, 0);
     }
 
