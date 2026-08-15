@@ -49,7 +49,17 @@
                                 @endfor
                             </select>
                         </div>
-
+                        <div class="col-md-3" wire:ignore>
+                            <label class="form-label">Select Months <span class="text-muted fs-11">(empty = whole year)</span></label>
+                            <select class="form-select select2" 
+                                    id="selectedMonths"
+                                    multiple
+                                    data-placeholder="Select months...">
+                                @foreach(['January','February','March','April','May','June','July','August','September','October','November','December'] as $idx => $monthName)
+                                    <option value="{{ $idx + 1 }}" {{ in_array($idx + 1, $selectedMonths) ? 'selected' : '' }}>{{ $monthName }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         @endif
                         @if($reportType === 'loans')
                         <div class="col-md-2">
@@ -81,7 +91,7 @@
                     <h5 class="card-title mb-0">
                         @switch($reportType)
                             @case('members') Members Report @break
-                            @case('contributions') Contributions Report ({{ $selectedYear }} - {{ collect($selectedMonths)->sort()->map(fn($m) => \Carbon\Carbon::create()->month($m)->format('M'))->implode(', ') }}) @break
+                            @case('contributions') Contributions Report ({{ $selectedYear }} - {{ empty($selectedMonths) ? 'All months' : collect($selectedMonths)->sort()->map(fn($m) => \Carbon\Carbon::create()->month($m)->format('M'))->implode(', ') }}) @break
                             @case('loans') Loans Report @break
                             @case('financial_summary') Financial Summary ({{ $startDate }} to {{ $endDate }}) @break
                         @endswitch
@@ -298,5 +308,14 @@
         @endif
     </div>
 
+    <script>
+        // This script runs before @livewireScripts, so Livewire is only reachable in here.
+        document.addEventListener('livewire:initialized', function () {
+            initMonthsSelect2();
 
+            Livewire.hook('morph.updated', () => {
+                setTimeout(initMonthsSelect2, 50);
+            });
+        });
+    </script>
 </div>
