@@ -69,6 +69,13 @@ class ConfirmedSharesSeederTest extends TestCase
             ->firstOrFail();
 
         $this->assertSame('2025-06-08', $seeded->paid_at->format('Y-m-d'), 'Seeded rows use the 2nd Sunday.');
+        $this->assertSame('zimele', $seeded->payment_method);
+
+        $this->assertSame(
+            0,
+            Contribution::whereNull('payment_method')->count(),
+            'Every contribution should record a payment method.'
+        );
 
         $registrations = [
             'Catherine Masinde' => '2025-01-12',

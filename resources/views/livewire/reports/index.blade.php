@@ -154,23 +154,29 @@
                                             <th>Member</th>
                                             <th class="text-end">Shares</th>
                                             <th class="text-end">Welfare</th>
+                                            <th class="text-end">Table Banking</th>
                                             <th class="text-end">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @php $totalShares = 0; $totalWelfare = 0; @endphp
+                                        @php $totalShares = 0; $totalWelfare = 0; $totalMerry = 0; @endphp
                                         @forelse($reportData as $row)
-                                            @php $totalShares += $row['shares']; $totalWelfare += $row['welfare']; @endphp
+                                            @php
+                                                $totalShares += $row['shares'];
+                                                $totalWelfare += $row['welfare'];
+                                                $totalMerry += $row['merry_go_round'];
+                                            @endphp
                                             <tr>
                                                 <td>{{ $row['for_month'] }}</td>
                                                 <td>{{ $row['date'] }}</td>
                                                 <td>{{ $row['member'] }}</td>
                                                 <td class="text-end">KES {{ number_format($row['shares'], 2) }}</td>
                                                 <td class="text-end">KES {{ number_format($row['welfare'], 2) }}</td>
+                                                <td class="text-end">KES {{ number_format($row['merry_go_round'], 2) }}</td>
                                                 <td class="text-end fw-bold">KES {{ number_format($row['total'], 2) }}</td>
                                             </tr>
                                         @empty
-                                            <tr><td colspan="6" class="text-center py-4 text-muted">No contributions in period</td></tr>
+                                            <tr><td colspan="7" class="text-center py-4 text-muted">No contributions in period</td></tr>
                                         @endforelse
                                     </tbody>
                                     @if(count($reportData) > 0)
@@ -179,7 +185,8 @@
                                             <td colspan="3">Total</td>
                                             <td class="text-end">KES {{ number_format($totalShares, 2) }}</td>
                                             <td class="text-end">KES {{ number_format($totalWelfare, 2) }}</td>
-                                            <td class="text-end">KES {{ number_format($totalShares + $totalWelfare, 2) }}</td>
+                                            <td class="text-end">KES {{ number_format($totalMerry, 2) }}</td>
+                                            <td class="text-end">KES {{ number_format($totalShares + $totalWelfare + $totalMerry, 2) }}</td>
                                         </tr>
                                     </tfoot>
                                     @endif
@@ -315,7 +322,7 @@
             }
         }
 
-        // This script runs before @livewireScripts, so Livewire is only reachable in here.
+        // This script runs before Livewire's own scripts, so the hook must be registered in here.
         document.addEventListener('livewire:initialized', function () {
             initMonthsSelect2();
 

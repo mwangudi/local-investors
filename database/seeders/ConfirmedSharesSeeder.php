@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\DB;
 
 class ConfirmedSharesSeeder extends Seeder
 {
+    // Contributions from the book are all routed through Zimele.
+    private const PAYMENT_METHOD = 'zimele';
+
     /**
      * Reconcile shares against the members' contribution book through August 2026.
      *
@@ -132,7 +135,7 @@ class ConfirmedSharesSeeder extends Seeder
                         'type' => $period === '2024-12-31' ? 'opening_balance' : 'monthly',
                         'notes' => 'Shares confirmed from the members contribution book.',
                         'paid_at' => $this->meetingDayOf($period),
-                        'payment_method' => null,
+                        'payment_method' => self::PAYMENT_METHOD,
                     ]);
                 }
             }
@@ -154,6 +157,10 @@ class ConfirmedSharesSeeder extends Seeder
                     'paid_at' => $this->meetingDayOf($contribution->contribution_period->format('Y-m-d')),
                 ]);
             });
+
+        Contribution::query()
+            ->whereNull('payment_method')
+            ->update(['payment_method' => self::PAYMENT_METHOD]);
     }
 
     // Meetings are held on the second Sunday of the month.
